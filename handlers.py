@@ -1,5 +1,5 @@
-from airogram import Router, types
-from airogram.filters import Command, Text
+from aiogram import Router, types
+from aiogram.filters import Command, Text
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
 

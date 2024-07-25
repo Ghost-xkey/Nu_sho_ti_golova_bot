@@ -1,6 +1,6 @@
 import logging
-from airogram import Bot, Dispatcher
-from airogram.utils import executor
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 from config import API_TOKEN
 from handlers import router
 from admin import admin_router
@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(bot)
 
 # Регистрация маршрутизаторов
 dp.include_router(router)

@@ -1,4 +1,4 @@
-from airogram import Router
+from aiogram import Router
 
 admin_router = Router()
 
