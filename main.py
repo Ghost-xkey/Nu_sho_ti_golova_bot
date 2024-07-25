@@ -42,4 +42,21 @@ async def send_daily_message():
 # Инициализация планировщика
 scheduler = AsyncIOScheduler()
 
-# Добавление задачи в пла
+# Добавление задачи в планировщик
+scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
+
+# Запуск планировщика
+scheduler.start()
+
+async def on_startup():
+    logging.info("Бот запущен")
+    await send_daily_message()
+
+async def on_shutdown():
+    logging.info("Бот остановлен")
+
+async def main():
+    await dp.start_polling(bot, on_startup=on_startup, on_shutdown=on_shutdown)
+
+if __name__ == '__main__':
+    asyncio.run(main())
