@@ -1,6 +1,6 @@
 import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
+from aiogram import Bot, Dispatcher
+from aiogram.dispatcher import executor
 from config import API_TOKEN
 from handlers import router
 from admin import admin_router
