@@ -1,9 +1,9 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram import start_polling  # Импорт start_polling напрямую из aiogram
+from aiogram.utils.markdown import hbold
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import TOKEN
-from handlers import router  # Импортируем router из handlers.py
+from handlers import router
 from utils import send_daily_message, send_yearly_message
 
 import logging
@@ -14,7 +14,7 @@ bot = Bot(token=TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-dp.include_router(router)  # Включение router в Dispatcher
+dp.include_router(router)
 
 scheduler = AsyncIOScheduler()
 scheduler.add_job(send_daily_message, "cron", hour=9, minute=0)
