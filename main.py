@@ -1,4 +1,5 @@
 import logging
+import signal
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram import Router
@@ -13,6 +14,7 @@ import asyncio
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Инициализация бота
 bot = Bot(token=API_TOKEN)
@@ -43,7 +45,7 @@ async def send_daily_message():
 scheduler = AsyncIOScheduler()
 
 # Добавление задачи в планировщик
-scheduler.add_job(send_daily_message, 'cron', hour=10, minute=30, timezone='Europe/Moscow')
+scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
 
 # Запуск планировщика
 scheduler.start()
@@ -59,4 +61,12 @@ async def main():
     await dp.start_polling(bot, on_startup=on_startup, on_shutdown=on_shutdown)
 
 if __name__ == '__main__':
+    # Обработка сигналов для корректного завершения работы
+    def handle_sigterm(*args):
+        logging.warning("Received SIGTERM signal")
+        raise SystemExit(1)
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    signal.signal(signal.SIGINT, handle_sigterm)
+    
     asyncio.run(main())
