@@ -1,16 +1,15 @@
 from aiogram import Router, types
-from aiogram.filters import Command
-from aiogram.filters.text import Text
+from aiogram.filters import Command, Text
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
 
 router = Router()
 
-@router.message(Command('start'))
+@router.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
     await message.answer(WELCOME_MESSAGE, reply_markup=main_keyboard())
 
-@router.message(Command('help'))
+@router.message(Command(commands=["help"]))
 async def cmd_help(message: types.Message):
     await message.answer(HELP_MESSAGE)
 
