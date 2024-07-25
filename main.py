@@ -43,7 +43,7 @@ async def send_daily_message():
 scheduler = AsyncIOScheduler()
 
 # Добавление задачи в планировщик
-scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
+scheduler.add_job(send_daily_message, 'cron', hour=10, minute=30, timezone='Europe/Moscow')
 
 # Запуск планировщика
 scheduler.start()
