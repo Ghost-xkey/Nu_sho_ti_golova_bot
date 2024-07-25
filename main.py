@@ -1,7 +1,8 @@
 import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
+from aiogram import Bot, Dispatcher
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.types import Message
+from aiogram.utils import executor
 from config import API_TOKEN
 from handlers import router
 from admin import admin_router
@@ -33,7 +34,7 @@ async def send_daily_message():
         response = requests.get("http://fucking-great-advice.ru/api/random")
         advice = response.json()['text']
         chat_id = '-573460520'  # Укажите ID вашего чата или канала
-        await bot.send_message(chat_id=chat_id, text=advice)
+        await bot.send_message(chat_id=chat_id, text=f"Охуенный блять совет на сегодня, братики! {advice}")
     except Exception as e:
         logging.error(f"Ошибка при отправке сообщения: {e}")
 
