@@ -1,0 +1,2 @@
+API_TOKEN = '7255987005:AAGaXiV6oYBY1UCgizHPqVZuxVhsAKqIA94'
+DB_PATH = 'database.db'
