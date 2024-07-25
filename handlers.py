@@ -1,7 +1,17 @@
 from aiogram import Router, types
-from aiogram.filters import Command, Text
+from aiogram.filters import BaseFilter, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
+
+class TextEqualsFilter(BaseFilter):
+    def __init__(self, text: str, ignore_case: bool = True):
+        self.text = text
+        self.ignore_case = ignore_case
+
+    async def __call__(self, message: types.Message) -> bool:
+        if self.ignore_case:
+            return message.text.lower() == self.text.lower()
+        return message.text == self.text
 
 router = Router()
 
@@ -13,6 +23,6 @@ async def cmd_start(message: types.Message):
 async def cmd_help(message: types.Message):
     await message.answer(HELP_MESSAGE)
 
-@router.message(Text(equals="Привет", ignore_case=True))
+@router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     await message.answer("Привет! Как дела?")
