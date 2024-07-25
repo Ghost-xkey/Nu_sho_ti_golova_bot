@@ -1,6 +1,5 @@
 import logging
 from aiogram import Bot, Dispatcher
-from aiogram.dispatcher import executor
 from config import API_TOKEN
 from handlers import router
 from admin import admin_router
@@ -20,5 +19,13 @@ dp.include_router(admin_router)
 # Создание таблиц в БД
 create_tables()
 
+async def on_startup(dp: Dispatcher):
+    # Ваши действия при старте (например, уведомление админов)
+    pass
+
+async def on_shutdown(dp: Dispatcher):
+    # Ваши действия при завершении (например, закрытие соединений)
+    pass
+
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    dp.start_polling(bot, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)
