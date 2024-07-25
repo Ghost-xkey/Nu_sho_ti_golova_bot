@@ -32,7 +32,7 @@ async def send_daily_message():
     try:
         response = requests.get("http://fucking-great-advice.ru/api/random")
         advice = response.json()['text']
-        chat_id = '@your_channel_or_chat_id'  # Укажите ID вашего чата или канала
+        chat_id = '-573460520'  # Укажите ID вашего чата или канала
         await bot.send_message(chat_id=chat_id, text=advice)
     except Exception as e:
         logging.error(f"Ошибка при отправке сообщения: {e}")
@@ -41,7 +41,7 @@ async def send_daily_message():
 scheduler = AsyncIOScheduler()
 
 # Добавление задачи в планировщик
-scheduler.add_job(send_daily_message, 'cron', hour=9, minute=0, timezone='Europe/Moscow')
+scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
 
 # Запуск планировщика
 scheduler.start()
