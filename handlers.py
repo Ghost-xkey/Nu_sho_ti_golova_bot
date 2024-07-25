@@ -9,6 +9,8 @@ class TextEqualsFilter(BaseFilter):
         self.ignore_case = ignore_case
 
     async def __call__(self, message: types.Message) -> bool:
+        if message.text is None:
+            return False
         if self.ignore_case:
             return message.text.lower() == self.text.lower()
         return message.text == self.text
