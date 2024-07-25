@@ -3,7 +3,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram import Router
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.executor import Executor
 from config import API_TOKEN
 from handlers import router as user_router
 from admin import admin_router
@@ -43,19 +42,4 @@ async def send_daily_message():
 # Инициализация планировщика
 scheduler = AsyncIOScheduler()
 
-# Добавление задачи в планировщик
-scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
-
-# Запуск планировщика
-scheduler.start()
-
-async def on_startup(dispatcher):
-    logging.info("Бот запущен")
-    await send_daily_message()
-
-async def on_shutdown(dispatcher):
-    logging.info("Бот остановлен")
-
-if __name__ == '__main__':
-    executor = Executor(dp, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
-    executor.start_polling(dp)
+# Добавление задачи в пла
