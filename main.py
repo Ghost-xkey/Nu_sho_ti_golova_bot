@@ -1,6 +1,6 @@
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils import start_polling
+from aiogram import start_polling
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import TOKEN
 from handlers import register_handlers
@@ -37,4 +37,4 @@ async def on_shutdown(dispatcher):
     scheduler.shutdown()
 
 if __name__ == "__main__":
-    start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
+    start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)
