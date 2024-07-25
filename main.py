@@ -1,10 +1,11 @@
 import logging
 from aiogram import Bot, Dispatcher
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.types import Message
-from aiogram.utils import executor
+from aiogram import Router
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.utils.executor import Executor
 from config import API_TOKEN
-from handlers import router
+from handlers import router as user_router
 from admin import admin_router
 from db import create_tables
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -17,13 +18,14 @@ logging.basicConfig(level=logging.INFO)
 # Инициализация бота
 bot = Bot(token=API_TOKEN)
 
-# Инициализация диспетчера
-dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
+# Инициализация диспетчера с MemoryStorage
+dp = Dispatcher(storage=MemoryStorage())
 
 # Регистрация маршрутизаторов
+router = Router()
+router.include_router(user_router)
+router.include_router(admin_router)
 dp.include_router(router)
-dp.include_router(admin_router)
 
 # Создание таблиц в БД
 create_tables()
@@ -55,4 +57,5 @@ async def on_shutdown(dispatcher):
     logging.info("Бот остановлен")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
+    executor = Executor(dp, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
+    executor.start_polling(dp)
