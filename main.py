@@ -1,72 +1,38 @@
 import logging
-import signal
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
-from aiogram import Router
-from aiogram.fsm.storage.memory import MemoryStorage
-from config import API_TOKEN
-from handlers import router as user_router
-from admin import admin_router
-from db import create_tables
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.utils.executor import start_polling
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import requests
-import asyncio
+from config import TOKEN
+from handlers import register_handlers
+from admin import register_admin_handlers
+from utils import send_daily_message, send_yearly_message
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-# Инициализация бота
-bot = Bot(token=API_TOKEN)
+storage = MemoryStorage()
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot, storage=storage)
 
-# Инициализация диспетчера с MemoryStorage
-dp = Dispatcher(storage=MemoryStorage())
-
-# Регистрация маршрутизаторов
-router = Router()
-router.include_router(user_router)
-router.include_router(admin_router)
-dp.include_router(router)
-
-# Создание таблиц в БД
-create_tables()
-
-# Функция для отправки сообщения
-async def send_daily_message():
-    try:
-        response = requests.get("http://fucking-great-advice.ru/api/random")
-        advice = response.json()['text']
-        chat_id = '-573460520'  # Укажите ID вашего чата или канала
-        await bot.send_message(chat_id=chat_id, text=f"Охуенный блять совет на сегодня, братики! {advice}")
-    except Exception as e:
-        logging.error(f"Ошибка при отправке сообщения: {e}")
-
-# Инициализация планировщика
 scheduler = AsyncIOScheduler()
 
-# Добавление задачи в планировщик
-scheduler.add_job(send_daily_message, 'cron', hour=10, minute=0, timezone='Europe/Moscow')
+# Register handlers
+register_handlers(dp)
+register_admin_handlers(dp)
 
-# Запуск планировщика
-scheduler.start()
+# Schedule daily message
+scheduler.add_job(send_daily_message, "cron", hour=9, minute=0)
 
-async def on_startup():
-    logging.info("Бот запущен")
-    await send_daily_message()
+# Schedule yearly message on 25th of July
+scheduler.add_job(send_yearly_message, "cron", month=7, day=25, hour=9, minute=0)
 
-async def on_shutdown():
-    logging.info("Бот остановлен")
+async def on_startup(dispatcher):
+    logging.info("Starting bot")
+    scheduler.start()
 
-async def main():
-    await dp.start_polling(bot, on_startup=on_startup, on_shutdown=on_shutdown)
+async def on_shutdown(dispatcher):
+    logging.info("Shutting down bot")
+    scheduler.shutdown()
 
-if __name__ == '__main__':
-    # Обработка сигналов для корректного завершения работы
-    def handle_sigterm(*args):
-        logging.warning("Received SIGTERM signal")
-        raise SystemExit(1)
-
-    signal.signal(signal.SIGTERM, handle_sigterm)
-    signal.signal(signal.SIGINT, handle_sigterm)
-    
-    asyncio.run(main())
+if __name__ == "__main__":
+    start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
