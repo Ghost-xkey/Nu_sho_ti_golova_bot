@@ -1,7 +1,8 @@
 from aiogram import Router, types
-from aiogram.filters import BaseFilter, Command
+from aiogram.filters import BaseFilter, CommandStart, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
+import logging
 
 class TextEqualsFilter(BaseFilter):
     def __init__(self, text: str, ignore_case: bool = True):
@@ -17,12 +18,14 @@ class TextEqualsFilter(BaseFilter):
 
 router = Router()
 
-@router.message(Command(commands=["start"]))
+@router.message(CommandStart())
 async def cmd_start(message: types.Message):
     try:
+        logging.info(f"Start command received from user {message.from_user.id}")
         await message.answer(WELCOME_MESSAGE, reply_markup=main_keyboard())
+        logging.info("Start command response sent")
     except Exception as e:
-        print(f"Error in start command: {e}")
+        logging.error(f"Error in start command: {e}")
 
 @router.message(Command(commands=["help"]))
 async def cmd_help(message: types.Message):
