@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=TOKEN)
 storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+dp = Dispatcher(storage=storage)
 
 dp.message.middleware(ExampleMiddleware())
 dp.include_router(router)
@@ -42,4 +42,5 @@ async def on_shutdown(dispatcher):
         logging.error(f"Error during shutdown: {e}")
 
 if __name__ == "__main__":
-    dp.run_polling(skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
+    import asyncio
+    asyncio.run(dp.start_polling(bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown))
