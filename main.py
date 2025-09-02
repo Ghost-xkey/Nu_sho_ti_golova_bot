@@ -5,6 +5,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import TOKEN
 from handlers import router
 from utils import send_daily_message, send_yearly_message
+from db import create_tables
+from middlewares import ExampleMiddleware
 
 import logging
 
@@ -14,6 +16,7 @@ bot = Bot(token=TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+dp.message.middleware(ExampleMiddleware())
 dp.include_router(router)
 
 scheduler = AsyncIOScheduler()
@@ -21,12 +24,22 @@ scheduler.add_job(send_daily_message, "cron", hour=9, minute=0)
 scheduler.add_job(send_yearly_message, "cron", month=7, day=25, hour=9, minute=0)
 
 async def on_startup(dispatcher):
-    logging.info("Starting bot")
-    scheduler.start()
+    try:
+        logging.info("Starting bot")
+        create_tables()
+        logging.info("Database initialized")
+        scheduler.start()
+        logging.info("Scheduler started")
+    except Exception as e:
+        logging.error(f"Error during startup: {e}")
 
 async def on_shutdown(dispatcher):
-    logging.info("Shutting down bot")
-    scheduler.shutdown()
+    try:
+        logging.info("Shutting down bot")
+        scheduler.shutdown()
+        logging.info("Scheduler stopped")
+    except Exception as e:
+        logging.error(f"Error during shutdown: {e}")
 
 if __name__ == "__main__":
     dp.run_polling(skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)

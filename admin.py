@@ -5,4 +5,7 @@ admin_router = Router()
 
 @admin_router.message(Command(commands=["admin"]))
 async def admin_command(message: types.Message):
-    await message.answer("Привет, админ!")
+    try:
+        await message.answer("Привет, админ!")
+    except Exception as e:
+        print(f"Error in admin command: {e}")

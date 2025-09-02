@@ -1,1 +1,3 @@
 TOKEN = '7255987995:AAGaXiV6oYBY1UCgizHPqVZuxVhsAKqIA94'
+DB_PATH = 'bot_database.db'
+CHAT_ID = '-573460520'

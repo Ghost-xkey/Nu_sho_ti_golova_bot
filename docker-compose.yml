@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  telegram-bot:
+    build: .
+    container_name: nu_sho_ti_golova_bot
+    restart: unless-stopped
+    environment:
+      - TOKEN=${TOKEN}
+      - CHAT_ID=${CHAT_ID}
+      - DB_PATH=${DB_PATH:-bot_database.db}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge

@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Nu_sho_ti_golova_bot
+Environment=PATH=/home/ubuntu/Nu_sho_ti_golova_bot/venv/bin
+ExecStart=/home/ubuntu/Nu_sho_ti_golova_bot/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,4 @@
-from airogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import StatesGroup, State
 
 class MyStates(StatesGroup):
     state1 = State()

@@ -19,12 +19,21 @@ router = Router()
 
 @router.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
-    await message.answer(WELCOME_MESSAGE, reply_markup=main_keyboard())
+    try:
+        await message.answer(WELCOME_MESSAGE, reply_markup=main_keyboard())
+    except Exception as e:
+        print(f"Error in start command: {e}")
 
 @router.message(Command(commands=["help"]))
 async def cmd_help(message: types.Message):
-    await message.answer(HELP_MESSAGE)
+    try:
+        await message.answer(HELP_MESSAGE)
+    except Exception as e:
+        print(f"Error in help command: {e}")
 
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
-    await message.answer("Привет! Как дела?")
+    try:
+        await message.answer("Привет! Как дела?")
+    except Exception as e:
+        print(f"Error in greet handler: {e}")
