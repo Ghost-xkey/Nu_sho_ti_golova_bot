@@ -13,14 +13,9 @@ else
     echo "📝 Создаем .env файл вручную..."
     cat > .env << EOF
 # Telegram Bot Configuration
-TOKEN=7255987995:AAGaXiV6oYBY1UCgizHPqVZuxVhsAKqIA94
+TOKEN=7255987005:AAEMSy4B0zWvJcH5RoJas9o4pEYvPMA__0g
 CHAT_ID=-573460520
 DB_PATH=bot_database.db
-
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=False
 EOF
     echo "✅ Файл .env создан вручную"
 fi

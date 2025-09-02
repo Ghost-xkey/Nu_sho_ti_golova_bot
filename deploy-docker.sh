@@ -31,7 +31,8 @@ if [ ! -f .env ]; then
     else
         echo "⚠️  Файл env.example не найден, создаем .env вручную..."
         cat > .env << EOF
-TOKEN=7255987995:AAGaXiV6oYBY1UCgizHPqVZuxVhsAKqIA94
+# Telegram Bot Configuration
+TOKEN=7255987005:AAEMSy4B0zWvJcH5RoJas9o4pEYvPMA__0g
 CHAT_ID=-573460520
 DB_PATH=bot_database.db
 EOF
