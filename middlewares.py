@@ -1,7 +1,14 @@
 from aiogram import BaseMiddleware
+from aiogram.types import Message
 import logging
+from typing import Any, Awaitable, Callable, Dict
 
 class ExampleMiddleware(BaseMiddleware):
-    async def on_pre_process_update(self, update, data):
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
         logging.info("Middleware activated")
-        return data
+        return await handler(event, data)
