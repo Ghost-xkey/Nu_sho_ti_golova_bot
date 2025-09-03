@@ -23,10 +23,31 @@ router = Router()
 async def cmd_start(message: types.Message):
     try:
         logging.info(f"Start command received from user {message.from_user.id}")
-        await message.answer(WELCOME_MESSAGE, reply_markup=main_keyboard())
+        from kb import get_main_menu_keyboard
+        
+        text = "🎉 **ДОБРО ПОЖАЛОВАТЬ!** 🎉\n\n"
+        text += "Это бот для управления ежегодными событиями и видеосообщениями!\n\n"
+        text += "Выберите действие из меню ниже:"
+        
+        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
         logging.info("Start command response sent")
     except Exception as e:
         logging.error(f"Error in start command: {e}")
+
+@router.message(Command(commands=["menu"]))
+async def cmd_menu(message: types.Message):
+    """Команда для открытия главного меню"""
+    try:
+        from kb import get_main_menu_keyboard
+        
+        text = "🎉 **ГЛАВНОЕ МЕНЮ** 🎉\n\n"
+        text += "Выберите действие из меню ниже:"
+        
+        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+        
+    except Exception as e:
+        logging.error(f"Error in menu command: {e}")
+        await message.answer("❌ Ошибка при открытии меню")
 
 @router.message(Command(commands=["help"]))
 async def cmd_help(message: types.Message):
@@ -724,3 +745,275 @@ async def handle_video_note(message: types.Message):
     except Exception as e:
         logging.error(f"Error handling video note: {e}")
         await message.reply("❌ Произошла ошибка при обработке видеосообщения")
+
+# ==================== CALLBACK HANDLERS ====================
+
+@router.callback_query(lambda c: c.data == "main_menu")
+async def callback_main_menu(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Главное меню'"""
+    try:
+        from kb import get_main_menu_keyboard
+        
+        text = "🎉 **ДОБРО ПОЖАЛОВАТЬ В ГЛАВНОЕ МЕНЮ!** 🎉\n\n"
+        text += "Выберите действие из меню ниже:"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in main_menu callback: {e}")
+        await callback_query.answer("❌ Ошибка при открытии меню")
+
+@router.callback_query(lambda c: c.data == "list_events")
+async def callback_list_events(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Список событий'"""
+    try:
+        from db import get_yearly_events
+        from kb import get_events_list_keyboard, get_back_to_menu_keyboard
+        
+        events = get_yearly_events()
+        
+        if not events:
+            text = "📅 **ЕЖЕГОДНЫЕ СОБЫТИЯ** 📅\n\n"
+            text += "Событий пока нет.\n\n"
+            text += "💡 Используйте кнопку 'Добавить событие' для создания нового события."
+            
+            await callback_query.message.edit_text(
+                text=text,
+                reply_markup=get_back_to_menu_keyboard(),
+                parse_mode="Markdown"
+            )
+        else:
+            text = f"📅 **ЕЖЕГОДНЫЕ СОБЫТИЯ** 📅\n\n"
+            text += f"Найдено событий: **{len(events)}**\n\n"
+            text += "Выберите событие для просмотра деталей:"
+            
+            await callback_query.message.edit_text(
+                text=text,
+                reply_markup=get_events_list_keyboard(events),
+                parse_mode="Markdown"
+            )
+        
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in list_events callback: {e}")
+        await callback_query.answer("❌ Ошибка при получении списка событий")
+
+@router.callback_query(lambda c: c.data.startswith("event_details_"))
+async def callback_event_details(callback_query: types.CallbackQuery):
+    """Обработчик просмотра деталей события"""
+    try:
+        event_id = int(callback_query.data.split("_")[2])
+        from db import get_yearly_events
+        from kb import get_event_actions_keyboard
+        
+        events = get_yearly_events()
+        event = None
+        
+        for e in events:
+            if e[0] == event_id:
+                event = e
+                break
+        
+        if not event:
+            await callback_query.answer("❌ Событие не найдено")
+            return
+        
+        event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event
+        
+        # Определяем эмодзи для месяца
+        month_emojis = {
+            1: "❄️", 2: "💝", 3: "🌸", 4: "🌱", 5: "🌺", 6: "☀️",
+            7: "🏖️", 8: "🌻", 9: "🍂", 10: "🎃", 11: "🍁", 12: "🎄"
+        }
+        month_emoji = month_emojis.get(month, "📅")
+        
+        # Красивая карточка события
+        text = "🎯 **ДЕТАЛИ СОБЫТИЯ** 🎯\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        text += f"┌─ 🎯 **СОБЫТИЕ #{event_id}** ─────────────────────┐\n"
+        text += f"│ 🆔 ID: `{event_id}`\n"
+        text += f"│ 🏷️ Название: **{name}**\n"
+        text += f"│ {month_emoji} Дата: **{day:02d}.{month:02d}** в **{hour:02d}:{minute:02d}**\n"
+        text += f"│ 💬 Сообщение: {message_text}\n"
+        
+        # Добавляем информацию о медиа
+        if music_url:
+            text += f"│ 🎵 Музыка: [Ссылка]({music_url})\n"
+        else:
+            text += f"│ 🎵 Музыка: ❌\n"
+            
+        if photo_file_id:
+            text += f"│ 📷 Картинка: ✅\n"
+        else:
+            text += f"│ 📷 Картинка: ❌\n"
+        
+        # Статус активности
+        status_emoji = "🟢" if is_active else "🔴"
+        status_text = "Активно" if is_active else "Неактивно"
+        text += f"│ {status_emoji} Статус: **{status_text}**\n"
+        
+        text += f"└─────────────────────────────────────────┘\n\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += "Выберите действие:"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_event_actions_keyboard(event_id),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in event_details callback: {e}")
+        await callback_query.answer("❌ Ошибка при получении деталей события")
+
+@router.callback_query(lambda c: c.data.startswith("delete_event_"))
+async def callback_delete_event(callback_query: types.CallbackQuery):
+    """Обработчик кнопки удаления события"""
+    try:
+        event_id = int(callback_query.data.split("_")[2])
+        from kb import get_confirm_delete_keyboard
+        
+        text = "⚠️ **ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ** ⚠️\n\n"
+        text += f"Вы действительно хотите удалить событие **#{event_id}**?\n\n"
+        text += "❗ **Это действие нельзя отменить!**"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_confirm_delete_keyboard(event_id),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in delete_event callback: {e}")
+        await callback_query.answer("❌ Ошибка при подготовке удаления")
+
+@router.callback_query(lambda c: c.data.startswith("confirm_delete_"))
+async def callback_confirm_delete(callback_query: types.CallbackQuery):
+    """Обработчик подтверждения удаления"""
+    try:
+        event_id = int(callback_query.data.split("_")[2])
+        from db import delete_yearly_event
+        from kb import get_back_to_menu_keyboard
+        
+        success = delete_yearly_event(event_id)
+        
+        if success:
+            text = "🗑️ **СОБЫТИЕ УДАЛЕНО!** 🗑️\n"
+            text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            text += f"┌─ 🎯 **УДАЛЕННОЕ СОБЫТИЕ** ─────────────────┐\n"
+            text += f"│ 🆔 ID: **{event_id}**\n"
+            text += f"│ 🔴 Статус: **Удалено**\n"
+            text += f"└─────────────────────────────────────────┘\n\n"
+            text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            text += "✅ Событие успешно удалено!"
+            
+            await callback_query.message.edit_text(
+                text=text,
+                reply_markup=get_back_to_menu_keyboard(),
+                parse_mode="Markdown"
+            )
+            await callback_query.answer("✅ Событие удалено!")
+        else:
+            await callback_query.answer("❌ Ошибка при удалении события")
+        
+    except Exception as e:
+        logging.error(f"Error in confirm_delete callback: {e}")
+        await callback_query.answer("❌ Ошибка при удалении события")
+
+@router.callback_query(lambda c: c.data.startswith("cancel_delete_"))
+async def callback_cancel_delete(callback_query: types.CallbackQuery):
+    """Обработчик отмены удаления"""
+    try:
+        event_id = int(callback_query.data.split("_")[2])
+        from kb import get_event_actions_keyboard
+        
+        # Возвращаемся к деталям события
+        await callback_event_details(callback_query)
+        
+    except Exception as e:
+        logging.error(f"Error in cancel_delete callback: {e}")
+        await callback_query.answer("❌ Ошибка при отмене удаления")
+
+@router.callback_query(lambda c: c.data == "statistics")
+async def callback_statistics(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Статистика'"""
+    try:
+        from kb import get_statistics_keyboard
+        
+        text = "📊 **СТАТИСТИКА** 📊\n\n"
+        text += "Выберите тип статистики:"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_statistics_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in statistics callback: {e}")
+        await callback_query.answer("❌ Ошибка при открытии статистики")
+
+@router.callback_query(lambda c: c.data == "add_event")
+async def callback_add_event(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Добавить событие'"""
+    try:
+        from kb import get_back_to_menu_keyboard
+        
+        text = "➕ **ДОБАВЛЕНИЕ СОБЫТИЯ** ➕\n\n"
+        text += "Для добавления нового события используйте команду:\n\n"
+        text += "`/add_yearly_event <название> <день> <месяц> [час] [минута]`\n\n"
+        text += "**Примеры:**\n"
+        text += "• `/add_yearly_event День_рождения 15 3 12 0`\n"
+        text += "• `/add_yearly_event Новый_год 1 1`\n\n"
+        text += "💡 **Совет:** Отправьте фото с подписью-командой для добавления картинки к событию!"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in add_event callback: {e}")
+        await callback_query.answer("❌ Ошибка при открытии добавления события")
+
+@router.callback_query(lambda c: c.data == "help")
+async def callback_help(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Помощь'"""
+    try:
+        from kb import get_back_to_menu_keyboard
+        
+        text = "❓ **ПОМОЩЬ** ❓\n\n"
+        text += "**Основные команды:**\n\n"
+        text += "📅 **События:**\n"
+        text += "• `/add_yearly_event` - добавить событие\n"
+        text += "• `/list_yearly_events` - список событий\n"
+        text += "• `/delete_yearly_event <ID>` - удалить событие\n\n"
+        text += "🎥 **Видео:**\n"
+        text += "• `/random_video` - случайное видео\n"
+        text += "• `/video_stats` - статистика видео\n\n"
+        text += "⚙️ **Админ:**\n"
+        text += "• `/init_db` - инициализация БД\n"
+        text += "• `/reset_db` - сброс БД\n\n"
+        text += "💡 **Совет:** Используйте кнопки меню для удобной навигации!"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in help callback: {e}")
+        await callback_query.answer("❌ Ошибка при открытии помощи")
