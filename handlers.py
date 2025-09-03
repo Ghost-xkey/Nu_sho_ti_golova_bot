@@ -356,7 +356,16 @@ async def cmd_add_yearly_event(message: types.Message):
         existing_events = get_yearly_events()
         logging.info(f"Existing events count: {len(existing_events)}")
         
-        success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
+        # Попробуем вызвать функцию напрямую
+        try:
+            logging.info("Calling add_yearly_event function...")
+            success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
+            logging.info(f"Function call completed, result: {success}")
+        except Exception as e:
+            logging.error(f"Exception in add_yearly_event: {e}")
+            import traceback
+            traceback.print_exc()
+            success = False
         
         logging.info(f"Add yearly event result: {success}")
         
