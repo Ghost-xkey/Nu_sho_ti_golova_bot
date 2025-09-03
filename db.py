@@ -29,9 +29,12 @@ def get_db_connection():
     return conn
 
 def create_tables():
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    print("create_tables function called")
     try:
+        print("Getting database connection...")
+        conn = get_db_connection()
+        print("Database connection obtained")
+        cursor = conn.cursor()
         print("Creating users table...")
         cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                             id INTEGER PRIMARY KEY,
