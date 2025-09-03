@@ -437,6 +437,63 @@ async def cmd_init_db(message: types.Message):
         logging.error(f"Error in init_db command: {e}")
         await message.answer("❌ Ошибка при создании таблиц")
 
+@router.message(Command(commands=["debug_db"]))
+async def cmd_debug_db(message: types.Message):
+    """Диагностика базы данных (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        import os
+        from config import DB_PATH
+        
+        # Проверяем файл базы данных
+        debug_info = f"🔍 **Диагностика базы данных:**\n\n"
+        debug_info += f"📁 Путь к БД: `{DB_PATH}`\n"
+        debug_info += f"📂 Текущая директория: `{os.getcwd()}`\n"
+        debug_info += f"📋 Содержимое директории:\n"
+        
+        try:
+            files = os.listdir('.')
+            for file in files[:10]:  # Показываем первые 10 файлов
+                debug_info += f"  - {file}\n"
+            if len(files) > 10:
+                debug_info += f"  ... и еще {len(files) - 10} файлов\n"
+        except Exception as e:
+            debug_info += f"  ❌ Ошибка чтения директории: {e}\n"
+        
+        debug_info += f"\n📊 Статус файла БД:\n"
+        if os.path.exists(DB_PATH):
+            debug_info += f"  ✅ Файл существует\n"
+            debug_info += f"  📏 Размер: {os.path.getsize(DB_PATH)} байт\n"
+            debug_info += f"  🔐 Права: {oct(os.stat(DB_PATH).st_mode)[-3:]}\n"
+        else:
+            debug_info += f"  ❌ Файл не существует\n"
+        
+        # Пробуем создать тестовое подключение
+        debug_info += f"\n🔌 Тест подключения:\n"
+        try:
+            import sqlite3
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchall()
+            debug_info += f"  ✅ Подключение успешно\n"
+            debug_info += f"  📋 Таблицы: {[table[0] for table in tables]}\n"
+            conn.close()
+        except Exception as e:
+            debug_info += f"  ❌ Ошибка подключения: {e}\n"
+        
+        await message.answer(debug_info)
+        
+    except Exception as e:
+        logging.error(f"Error in debug_db command: {e}")
+        await message.answer(f"❌ Ошибка диагностики: {e}")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
