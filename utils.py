@@ -2,6 +2,12 @@ from aiogram import Bot
 from config import TOKEN, CHAT_ID, YEARLY_MESSAGE, YANDEX_TRACK_URL, get_yearly_photo
 from db import get_random_video, get_video_count, get_yearly_events
 import datetime
+import pytz
+
+def get_moscow_time():
+    """Получает текущее время в московском часовом поясе"""
+    moscow_tz = pytz.timezone('Europe/Moscow')
+    return datetime.datetime.now(moscow_tz)
 
 async def send_daily_message():
     bot = Bot(token=TOKEN)
@@ -104,14 +110,14 @@ async def check_and_send_yearly_events():
     print("🔧 Function is being executed by scheduler")
     try:
         print("✅ Entered try block successfully")
-        # Получаем текущую дату и время
-        now = datetime.datetime.now()
+        # Получаем текущую дату и время в московском часовом поясе
+        now = get_moscow_time()
         current_day = now.day
         current_month = now.month
         current_hour = now.hour
         current_minute = now.minute
         
-        print(f"🔍 Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
+        print(f"🔍 Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d} (Moscow time)")
         
         # Получаем все активные ежегодные события
         print("📊 Getting yearly events from database...")
@@ -148,14 +154,14 @@ def check_and_send_yearly_events_sync():
     print("🧪 SYNC check_and_send_yearly_events function started!")
     try:
         print("✅ SYNC Entered try block successfully")
-        # Получаем текущую дату и время
-        now = datetime.datetime.now()
+        # Получаем текущую дату и время в московском часовом поясе
+        now = get_moscow_time()
         current_day = now.day
         current_month = now.month
         current_hour = now.hour
         current_minute = now.minute
         
-        print(f"🔍 SYNC Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
+        print(f"🔍 SYNC Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d} (Moscow time)")
         
         # Получаем все активные ежегодные события
         print("📊 SYNC Getting yearly events from database...")
@@ -174,4 +180,4 @@ def simple_test_function():
     """Простая тестовая функция"""
     print("🔥 SIMPLE TEST FUNCTION CALLED!")
     print("🔥 This should work!")
-    print("🔥 Current time:", datetime.datetime.now().strftime("%H:%M:%S"))
+    print("🔥 Current time:", get_moscow_time().strftime("%H:%M:%S (Moscow)"))
