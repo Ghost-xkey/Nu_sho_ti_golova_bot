@@ -330,7 +330,8 @@ async def cmd_add_yearly_event(message: types.Message):
         if len(command_text) < 4:
             await message.answer("❌ Использование: /add_yearly_event <название> <день> <месяц> [час] [минута]\n\n"
                                "Пример: /add_yearly_event День_рождения 15 3 12 0\n"
-                               "Пример: /add_yearly_event Новый_год 1 1")
+                               "Пример: /add_yearly_event Новый_год 1 1\n\n"
+                               "💡 Для добавления картинки: отправьте фото после команды")
             return
         
         # Извлекаем числовые параметры с конца
@@ -351,6 +352,12 @@ async def cmd_add_yearly_event(message: types.Message):
                                "Пример: /add_yearly_event С днем улыбок 3 9 6 43")
             return
         
+        # Проверяем, есть ли фото в сообщении
+        photo_file_id = None
+        if message.photo:
+            photo_file_id = message.photo[-1].file_id
+            logging.info(f"Photo detected for yearly event: {photo_file_id}")
+        
         # Добавляем событие
         from db import add_yearly_event, get_yearly_events
         
@@ -369,7 +376,7 @@ async def cmd_add_yearly_event(message: types.Message):
             from db import add_yearly_event
             logging.info(f"add_yearly_event function: {add_yearly_event}")
             
-            success = add_yearly_event(name, day, month, hour, minute, f"{name}!")
+            success = add_yearly_event(name, day, month, hour, minute, f"{name}!", None, photo_file_id)
             logging.info(f"Function call completed, result: {success}")
         except Exception as e:
             logging.error(f"Exception in add_yearly_event: {e}")
@@ -384,10 +391,11 @@ async def cmd_add_yearly_event(message: types.Message):
         logging.info(f"Events after adding: {len(events_after)}")
         
         if success:
+            photo_info = f"\n📷 Картинка: {'Да' if photo_file_id else 'Нет'}"
             await message.answer(f"✅ Ежегодное событие добавлено!\n\n"
                                f"📅 Название: {name}\n"
                                f"📆 Дата: {day}.{month}\n"
-                               f"⏰ Время: {hour:02d}:{minute:02d}")
+                               f"⏰ Время: {hour:02d}:{minute:02d}{photo_info}")
         else:
             await message.answer("❌ Ошибка при добавлении события")
             
