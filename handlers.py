@@ -112,6 +112,47 @@ async def cmd_time(message: types.Message):
         logging.error(f"Error in time command: {e}")
         await message.answer("❌ Ошибка при получении времени")
 
+@router.message(Command(commands=["add_video"]))
+async def cmd_add_video(message: types.Message):
+    """Добавляет видео вручную по file_id (для админов)"""
+    try:
+        # Проверяем, что это админ (можно настроить список админов)
+        admin_ids = [203593418]  # Замените на ID админов
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Получаем file_id из текста команды
+        command_text = message.text.split()
+        if len(command_text) < 2:
+            await message.answer("❌ Использование: /add_video <file_id>\n\n"
+                               f"Пример: /add_video DQACAgIAAyEFAASVwQjMAAINKmi3iN_95n1LCbr-QabEUt3-qRvNAAKYdwACYNnASeJU1kTZBTitNgQ")
+            return
+        
+        file_id = command_text[1]
+        
+        # Сохраняем видео
+        success = save_video_message(
+            file_id=file_id,
+            file_unique_id=f"manual_{file_id[:10]}",  # Генерируем уникальный ID
+            message_id=message.message_id,
+            user_id=message.from_user.id,
+            username=message.from_user.username or message.from_user.first_name,
+            caption="Добавлено вручную"
+        )
+        
+        if success:
+            video_count = get_video_count()
+            await message.answer(f"✅ Видео добавлено вручную!\n\n"
+                               f"Всего в коллекции: {video_count}")
+        else:
+            await message.answer("❌ Ошибка при добавлении видео")
+            
+    except Exception as e:
+        logging.error(f"Error in add_video command: {e}")
+        await message.answer("❌ Ошибка при добавлении видео")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
