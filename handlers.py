@@ -239,6 +239,24 @@ async def cmd_test_chat(message: types.Message):
         logging.error(f"Error in test_chat command: {e}")
         await message.answer("❌ Ошибка при тестировании чата")
 
+@router.message(Command(commands=["get_chat_id"]))
+async def cmd_get_chat_id(message: types.Message):
+    """Показывает ID текущего чата"""
+    try:
+        chat_id = message.chat.id
+        chat_type = message.chat.type
+        chat_title = message.chat.title or "Личный чат"
+        
+        await message.answer(f"🆔 ID чата: {chat_id}\n"
+                           f"📝 Тип: {chat_type}\n"
+                           f"🏷️ Название: {chat_title}")
+        
+        logging.info(f"Chat ID: {chat_id}, Type: {chat_type}, Title: {chat_title}")
+        
+    except Exception as e:
+        logging.error(f"Error in get_chat_id command: {e}")
+        await message.answer("❌ Ошибка при получении ID чата")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
