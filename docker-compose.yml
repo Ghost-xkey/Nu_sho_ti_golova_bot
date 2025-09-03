@@ -9,7 +9,6 @@ services:
       - DB_PATH=${DB_PATH:-bot_database.db}
     volumes:
       - ./data:/app/data
-      - ./bot_database.db:/app/bot_database.db
     networks:
       - bot-network
 
