@@ -314,6 +314,106 @@ async def cmd_remove_yearly_image(message: types.Message):
         logging.error(f"Error in remove_yearly_image command: {e}")
         await message.answer("❌ Ошибка при удалении картинки")
 
+@router.message(Command(commands=["add_yearly_event"]))
+async def cmd_add_yearly_event(message: types.Message):
+    """Добавляет новое ежегодное событие (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Получаем параметры из команды
+        command_text = message.text.split()
+        if len(command_text) < 4:
+            await message.answer("❌ Использование: /add_yearly_event <название> <день> <месяц> [час] [минута]\n\n"
+                               "Пример: /add_yearly_event 'День рождения' 15 3 12 0\n"
+                               "Пример: /add_yearly_event 'Новый год' 1 1")
+            return
+        
+        name = command_text[1].strip("'\"")
+        day = int(command_text[2])
+        month = int(command_text[3])
+        hour = int(command_text[4]) if len(command_text) > 4 else 10
+        minute = int(command_text[5]) if len(command_text) > 5 else 0
+        
+        # Добавляем событие
+        from db import add_yearly_event
+        success = add_yearly_event(name, day, month, hour, minute)
+        
+        if success:
+            await message.answer(f"✅ Ежегодное событие добавлено!\n\n"
+                               f"📅 Название: {name}\n"
+                               f"📆 Дата: {day}.{month}\n"
+                               f"⏰ Время: {hour:02d}:{minute:02d}")
+        else:
+            await message.answer("❌ Ошибка при добавлении события")
+            
+    except Exception as e:
+        logging.error(f"Error in add_yearly_event command: {e}")
+        await message.answer("❌ Ошибка при добавлении события")
+
+@router.message(Command(commands=["list_yearly_events"]))
+async def cmd_list_yearly_events(message: types.Message):
+    """Показывает список всех ежегодных событий"""
+    try:
+        from db import get_yearly_events
+        
+        events = get_yearly_events()
+        
+        if not events:
+            await message.answer("📅 Ежегодных событий пока нет")
+            return
+        
+        events_text = "📅 **Ежегодные события:**\n\n"
+        
+        for event in events:
+            event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event
+            events_text += f"🆔 **{event_id}** - {name}\n"
+            events_text += f"📆 {day:02d}.{month:02d} в {hour:02d}:{minute:02d}\n"
+            events_text += f"💬 {message_text[:50]}{'...' if len(message_text) > 50 else ''}\n\n"
+        
+        await message.answer(events_text)
+        
+    except Exception as e:
+        logging.error(f"Error in list_yearly_events command: {e}")
+        await message.answer("❌ Ошибка при получении списка событий")
+
+@router.message(Command(commands=["delete_yearly_event"]))
+async def cmd_delete_yearly_event(message: types.Message):
+    """Удаляет ежегодное событие (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Получаем ID события
+        command_text = message.text.split()
+        if len(command_text) < 2:
+            await message.answer("❌ Использование: /delete_yearly_event <ID_события>\n\n"
+                               "Сначала используйте /list_yearly_events чтобы увидеть ID")
+            return
+        
+        event_id = int(command_text[1])
+        
+        # Удаляем событие
+        from db import delete_yearly_event
+        success = delete_yearly_event(event_id)
+        
+        if success:
+            await message.answer(f"✅ Событие {event_id} удалено!")
+        else:
+            await message.answer("❌ Ошибка при удалении события")
+            
+    except Exception as e:
+        logging.error(f"Error in delete_yearly_event command: {e}")
+        await message.answer("❌ Ошибка при удалении события")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:

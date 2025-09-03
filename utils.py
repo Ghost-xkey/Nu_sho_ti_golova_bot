@@ -30,6 +30,7 @@ async def send_daily_message():
         await bot.session.close()
 
 async def send_yearly_message():
+    """Отправляет ежегодное сообщение (старая версия для совместимости)"""
     bot = Bot(token=TOKEN)
     try:
         # Отправляем сообщение с текстом и ссылкой на трек
@@ -56,6 +57,41 @@ async def send_yearly_message():
         
     except Exception as e:
         print(f"Error sending yearly message: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        await bot.session.close()
+
+async def send_yearly_event_message(event_data):
+    """Отправляет сообщение для конкретного ежегодного события"""
+    bot = Bot(token=TOKEN)
+    try:
+        event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event_data
+        
+        # Формируем сообщение
+        full_message = f"🎉 **{name}**\n\n{message_text}"
+        
+        if music_url:
+            full_message += f"\n\n🎵 Музыка: {music_url}"
+        
+        print(f"Sending yearly event message: {name} to chat_id: {CHAT_ID}")
+        print(f"Message text: {full_message}")
+        
+        if photo_file_id:
+            # Отправляем сообщение с картинкой
+            await bot.send_photo(
+                chat_id=CHAT_ID, 
+                photo=photo_file_id,
+                caption=full_message
+            )
+            print(f"Yearly event message with photo sent successfully: {photo_file_id}")
+        else:
+            # Отправляем обычное сообщение без картинки
+            await bot.send_message(chat_id=CHAT_ID, text=full_message)
+            print("Yearly event message without photo sent successfully")
+        
+    except Exception as e:
+        print(f"Error sending yearly event message: {e}")
         import traceback
         traceback.print_exc()
     finally:

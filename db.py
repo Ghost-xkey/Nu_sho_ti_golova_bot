@@ -21,15 +21,28 @@ def create_tables():
                             username TEXT)''')
         
         print("Creating video_messages table...")
-        cursor.execute('''CREATE TABLE IF NOT EXISTS video_messages (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            file_id TEXT UNIQUE NOT NULL,
-                            file_unique_id TEXT UNIQUE NOT NULL,
-                            message_id INTEGER NOT NULL,
-                            user_id INTEGER NOT NULL,
-                            username TEXT,
-                            caption TEXT,
-                            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+        cursor.execute('''        CREATE TABLE IF NOT EXISTS video_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id TEXT UNIQUE NOT NULL,
+            file_unique_id TEXT UNIQUE NOT NULL,
+            message_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT,
+            caption TEXT,
+            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP),
+        
+        CREATE TABLE IF NOT EXISTS yearly_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            day INTEGER NOT NULL,
+            month INTEGER NOT NULL,
+            hour INTEGER DEFAULT 10,
+            minute INTEGER DEFAULT 0,
+            message TEXT NOT NULL,
+            music_url TEXT,
+            photo_file_id TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         
         conn.commit()
         print("Tables created successfully")
@@ -146,5 +159,89 @@ def get_total_users():
     except Exception as e:
         print(f"Error getting total users: {e}")
         return 0
+    finally:
+        conn.close()
+
+# Функции для работы с ежегодными событиями
+def add_yearly_event(name, day, month, hour=10, minute=0, message="", music_url="", photo_file_id=""):
+    """Добавляет новое ежегодное событие"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''INSERT INTO yearly_events 
+                         (name, day, month, hour, minute, message, music_url, photo_file_id)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (name, day, month, hour, minute, message, music_url, photo_file_id))
+        
+        conn.commit()
+        print(f"Yearly event added: {name}")
+        return True
+    except Exception as e:
+        print(f"Error adding yearly event: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_yearly_events():
+    """Возвращает все активные ежегодные события"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT * FROM yearly_events WHERE is_active = 1 ORDER BY month, day')
+        events = cursor.fetchall()
+        return events
+    except Exception as e:
+        print(f"Error getting yearly events: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_yearly_event_by_date(day, month):
+    """Возвращает событие по дате"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT * FROM yearly_events WHERE day = ? AND month = ? AND is_active = 1', (day, month))
+        event = cursor.fetchone()
+        return event
+    except Exception as e:
+        print(f"Error getting yearly event by date: {e}")
+        return None
+    finally:
+        conn.close()
+
+def update_yearly_event(event_id, **kwargs):
+    """Обновляет ежегодное событие"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Формируем запрос обновления
+        set_clause = ", ".join([f"{key} = ?" for key in kwargs.keys()])
+        values = list(kwargs.values()) + [event_id]
+        
+        cursor.execute(f'UPDATE yearly_events SET {set_clause} WHERE id = ?', values)
+        
+        conn.commit()
+        print(f"Yearly event {event_id} updated")
+        return True
+    except Exception as e:
+        print(f"Error updating yearly event: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete_yearly_event(event_id):
+    """Удаляет ежегодное событие (деактивирует)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('UPDATE yearly_events SET is_active = 0 WHERE id = ?', (event_id,))
+        
+        conn.commit()
+        print(f"Yearly event {event_id} deleted")
+        return True
+    except Exception as e:
+        print(f"Error deleting yearly event: {e}")
+        return False
     finally:
         conn.close()
