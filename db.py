@@ -174,19 +174,25 @@ def get_total_users():
 # Функции для работы с ежегодными событиями
 def add_yearly_event(name, day, month, hour=10, minute=0, message="", music_url="", photo_file_id=""):
     """Добавляет новое ежегодное событие"""
+    print(f"add_yearly_event called with: name={name}, day={day}, month={month}, hour={hour}, minute={minute}, message={message}")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        print("Executing INSERT query...")
         cursor.execute('''INSERT INTO yearly_events 
                          (name, day, month, hour, minute, message, music_url, photo_file_id)
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                       (name, day, month, hour, minute, message, music_url, photo_file_id))
         
+        print("Committing transaction...")
         conn.commit()
-        print(f"Yearly event added: {name}")
+        print(f"Yearly event added successfully: {name}")
         return True
     except Exception as e:
         print(f"Error adding yearly event: {e}")
+        import traceback
+        traceback.print_exc()
         return False
     finally:
         conn.close()
