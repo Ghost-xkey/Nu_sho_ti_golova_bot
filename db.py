@@ -8,36 +8,69 @@ def get_db_connection():
 def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY,
-                        username TEXT)''')
-    
-    cursor.execute('''CREATE TABLE IF NOT EXISTS video_messages (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        file_id TEXT UNIQUE NOT NULL,
-                        file_unique_id TEXT UNIQUE NOT NULL,
-                        message_id INTEGER NOT NULL,
-                        user_id INTEGER NOT NULL,
-                        username TEXT,
-                        caption TEXT,
-                        date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        print("Creating users table...")
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                            id INTEGER PRIMARY KEY,
+                            username TEXT)''')
+        
+        print("Creating video_messages table...")
+        cursor.execute('''CREATE TABLE IF NOT EXISTS video_messages (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            file_id TEXT UNIQUE NOT NULL,
+                            file_unique_id TEXT UNIQUE NOT NULL,
+                            message_id INTEGER NOT NULL,
+                            user_id INTEGER NOT NULL,
+                            username TEXT,
+                            caption TEXT,
+                            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+        
+        conn.commit()
+        print("Tables created successfully")
+        
+        # Проверим, что таблица создалась
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='video_messages'")
+        result = cursor.fetchone()
+        if result:
+            print("video_messages table exists")
+        else:
+            print("ERROR: video_messages table not found!")
+            
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        conn.close()
 
 def save_video_message(file_id, file_unique_id, message_id, user_id, username, caption=None):
     """Сохраняет видеосообщение в базу данных"""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        print(f"Attempting to save video: file_id={file_id}, user_id={user_id}, username={username}")
+        
         cursor.execute('''INSERT OR IGNORE INTO video_messages 
                          (file_id, file_unique_id, message_id, user_id, username, caption)
                          VALUES (?, ?, ?, ?, ?, ?)''',
                       (file_id, file_unique_id, message_id, user_id, username, caption))
+        
+        rows_affected = cursor.rowcount
+        print(f"Rows affected: {rows_affected}")
+        
         conn.commit()
-        return True
+        
+        if rows_affected > 0:
+            print(f"Video saved successfully: {file_id}")
+            return True
+        else:
+            print(f"Video already exists or failed to save: {file_id}")
+            return False
+            
     except Exception as e:
         print(f"Error saving video message: {e}")
+        import traceback
+        traceback.print_exc()
         return False
     finally:
         conn.close()
