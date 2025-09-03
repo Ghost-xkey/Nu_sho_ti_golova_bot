@@ -35,6 +35,9 @@ async def send_yearly_message():
         # Отправляем сообщение с текстом и ссылкой на трек
         message_text = f"{YEARLY_MESSAGE}\n\n🎵 Музыка: {YANDEX_TRACK_URL}"
         
+        print(f"Sending yearly message to chat_id: {CHAT_ID}")
+        print(f"Message text: {message_text}")
+        
         await bot.send_message(chat_id=CHAT_ID, text=message_text)
         print("Yearly message sent successfully")
         
@@ -43,5 +46,7 @@ async def send_yearly_message():
         
     except Exception as e:
         print(f"Error sending yearly message: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         await bot.session.close()

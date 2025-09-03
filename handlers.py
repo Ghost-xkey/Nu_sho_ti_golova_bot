@@ -204,6 +204,41 @@ async def cmd_my_id(message: types.Message):
         logging.error(f"Error in my_id command: {e}")
         await message.answer("❌ Ошибка при получении ID")
 
+@router.message(Command(commands=["test_chat"]))
+async def cmd_test_chat(message: types.Message):
+    """Тестирует отправку сообщения в группу (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        from config import CHAT_ID
+        from aiogram import Bot
+        from config import TOKEN
+        
+        bot = Bot(token=TOKEN)
+        
+        try:
+            # Отправляем тестовое сообщение в группу
+            await bot.send_message(
+                chat_id=CHAT_ID, 
+                text="🧪 Тестовое сообщение от бота!\n\nЕсли вы видите это сообщение, значит бот работает в группе."
+            )
+            await message.answer(f"✅ Тестовое сообщение отправлено в группу {CHAT_ID}")
+            
+        except Exception as e:
+            await message.answer(f"❌ Ошибка отправки в группу: {e}")
+            
+        finally:
+            await bot.session.close()
+            
+    except Exception as e:
+        logging.error(f"Error in test_chat command: {e}")
+        await message.answer("❌ Ошибка при тестировании чата")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
