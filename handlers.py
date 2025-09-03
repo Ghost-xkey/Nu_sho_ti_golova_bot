@@ -414,6 +414,29 @@ async def cmd_delete_yearly_event(message: types.Message):
         logging.error(f"Error in delete_yearly_event command: {e}")
         await message.answer("❌ Ошибка при удалении события")
 
+@router.message(Command(commands=["init_db"]))
+async def cmd_init_db(message: types.Message):
+    """Принудительно создает таблицы базы данных (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Принудительно создаем таблицы
+        from db import create_tables
+        create_tables()
+        
+        await message.answer("✅ Таблицы базы данных созданы/обновлены!")
+        
+        logging.info(f"Database tables initialized by user {message.from_user.id}")
+        
+    except Exception as e:
+        logging.error(f"Error in init_db command: {e}")
+        await message.answer("❌ Ошибка при создании таблиц")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:

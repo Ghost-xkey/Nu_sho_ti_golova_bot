@@ -21,7 +21,7 @@ def create_tables():
                             username TEXT)''')
         
         print("Creating video_messages table...")
-        cursor.execute('''        CREATE TABLE IF NOT EXISTS video_messages (
+        cursor.execute('''CREATE TABLE IF NOT EXISTS video_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             file_id TEXT UNIQUE NOT NULL,
             file_unique_id TEXT UNIQUE NOT NULL,
@@ -29,9 +29,10 @@ def create_tables():
             user_id INTEGER NOT NULL,
             username TEXT,
             caption TEXT,
-            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP),
+            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         
-        CREATE TABLE IF NOT EXISTS yearly_events (
+        print("Creating yearly_events table...")
+        cursor.execute('''CREATE TABLE IF NOT EXISTS yearly_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             day INTEGER NOT NULL,
