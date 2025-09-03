@@ -544,10 +544,17 @@ async def cmd_reset_db(message: types.Message):
         import os
         from config import DB_PATH
         
-        # Удаляем файл базы данных если он существует
+        # Удаляем файл/директорию базы данных если они существуют
         if DB_PATH != ':memory:' and os.path.exists(DB_PATH):
-            os.remove(DB_PATH)
-            await message.answer(f"✅ Файл базы данных удален: {DB_PATH}")
+            import shutil
+            if os.path.isdir(DB_PATH):
+                # Если это директория, удаляем её
+                shutil.rmtree(DB_PATH)
+                await message.answer(f"✅ Директория базы данных удалена: {DB_PATH}")
+            else:
+                # Если это файл, удаляем его
+                os.remove(DB_PATH)
+                await message.answer(f"✅ Файл базы данных удален: {DB_PATH}")
         else:
             await message.answer("ℹ️ База данных в памяти или файл не существует")
         
