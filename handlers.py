@@ -256,6 +256,64 @@ async def cmd_get_chat_id(message: types.Message):
         logging.error(f"Error in get_chat_id command: {e}")
         await message.answer("❌ Ошибка при получении ID чата")
 
+@router.message(Command(commands=["set_yearly_image"]))
+async def cmd_set_yearly_image(message: types.Message):
+    """Устанавливает картинку для ежегодного сообщения (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Проверяем, что это изображение
+        if not message.photo:
+            await message.answer("❌ Пожалуйста, отправьте изображение вместе с командой /set_yearly_image")
+            return
+        
+        # Получаем file_id самого большого размера
+        photo = message.photo[-1]
+        file_id = photo.file_id
+        
+        # Обновляем конфиг
+        from config import update_yearly_photo
+        update_yearly_photo(file_id)
+        
+        await message.answer(f"✅ Картинка для ежегодного сообщения установлена!\n\n"
+                           f"File ID: {file_id}\n"
+                           f"Теперь ежегодное сообщение будет отправляться с этой картинкой.")
+        
+        logging.info(f"Yearly image updated by user {message.from_user.id}: {file_id}")
+        
+    except Exception as e:
+        logging.error(f"Error in set_yearly_image command: {e}")
+        await message.answer("❌ Ошибка при установке картинки")
+
+@router.message(Command(commands=["remove_yearly_image"]))
+async def cmd_remove_yearly_image(message: types.Message):
+    """Удаляет картинку для ежегодного сообщения (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Удаляем картинку из конфига
+        from config import remove_yearly_photo
+        remove_yearly_photo()
+        
+        await message.answer("✅ Картинка для ежегодного сообщения удалена!\n\n"
+                           "Теперь ежегодное сообщение будет отправляться без картинки.")
+        
+        logging.info(f"Yearly image removed by user {message.from_user.id}")
+        
+    except Exception as e:
+        logging.error(f"Error in remove_yearly_image command: {e}")
+        await message.answer("❌ Ошибка при удалении картинки")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:

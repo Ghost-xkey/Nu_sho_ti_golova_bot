@@ -13,5 +13,21 @@ YEARLY_HOUR = 10
 YEARLY_MINUTE = 0
 YEARLY_MESSAGE = "Ну шо вы головешки, календарь перевернули?"
 YANDEX_TRACK_URL = "https://music.yandex.ru/track/52010356"
-# TODO: Добавить file_id картинки после загрузки
-YEARLY_PHOTO_FILE_ID = None  # Замените на file_id картинки
+# Картинка для ежегодного сообщения
+YEARLY_PHOTO_FILE_ID = None  # file_id картинки
+
+def update_yearly_photo(file_id):
+    """Обновляет file_id картинки для ежегодного сообщения"""
+    global YEARLY_PHOTO_FILE_ID
+    YEARLY_PHOTO_FILE_ID = file_id
+    print(f"Yearly photo updated: {file_id}")
+
+def remove_yearly_photo():
+    """Удаляет картинку для ежегодного сообщения"""
+    global YEARLY_PHOTO_FILE_ID
+    YEARLY_PHOTO_FILE_ID = None
+    print("Yearly photo removed")
+
+def get_yearly_photo():
+    """Возвращает file_id картинки для ежегодного сообщения"""
+    return YEARLY_PHOTO_FILE_ID
