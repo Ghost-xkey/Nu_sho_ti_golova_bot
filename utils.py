@@ -1,6 +1,7 @@
 from aiogram import Bot
 from config import TOKEN, CHAT_ID, YEARLY_MESSAGE, YANDEX_TRACK_URL, get_yearly_photo
-from db import get_random_video, get_video_count
+from db import get_random_video, get_video_count, get_yearly_events
+import datetime
 
 async def send_daily_message():
     bot = Bot(token=TOKEN)
@@ -96,3 +97,39 @@ async def send_yearly_event_message(event_data):
         traceback.print_exc()
     finally:
         await bot.session.close()
+
+async def check_and_send_yearly_events():
+    """Проверяет и отправляет ежегодные события по расписанию"""
+    try:
+        # Получаем текущую дату и время
+        now = datetime.datetime.now()
+        current_day = now.day
+        current_month = now.month
+        current_hour = now.hour
+        current_minute = now.minute
+        
+        print(f"Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
+        
+        # Получаем все активные ежегодные события
+        events = get_yearly_events()
+        print(f"Found {len(events)} active yearly events")
+        
+        # Проверяем каждое событие
+        for event in events:
+            event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event
+            
+            # Проверяем, совпадает ли дата и время
+            if (day == current_day and 
+                month == current_month and 
+                hour == current_hour and 
+                minute == current_minute):
+                
+                print(f"Found matching event: {name} at {day}.{month} {hour}:{minute:02d}")
+                await send_yearly_event_message(event)
+            else:
+                print(f"Event {name} doesn't match current time: {day}.{month} {hour}:{minute:02d} vs {current_day}.{current_month} {current_hour}:{current_minute:02d}")
+        
+    except Exception as e:
+        print(f"Error checking yearly events: {e}")
+        import traceback
+        traceback.print_exc()

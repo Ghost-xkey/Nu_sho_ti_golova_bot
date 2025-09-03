@@ -4,7 +4,7 @@ from aiogram.utils.markdown import hbold
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import TOKEN, MEMORY_HOUR, MEMORY_MINUTE, YEARLY_DAY, YEARLY_MONTH, YEARLY_HOUR, YEARLY_MINUTE
 from handlers import router
-from utils import send_daily_message, send_yearly_message
+from utils import send_daily_message, send_yearly_message, check_and_send_yearly_events
 from db import create_tables
 from middlewares import ExampleMiddleware
 
@@ -20,8 +20,15 @@ dp.message.middleware(ExampleMiddleware())
 dp.include_router(router)
 
 scheduler = AsyncIOScheduler()
+
+# Ежедневные воспоминания
 scheduler.add_job(send_daily_message, "cron", hour=MEMORY_HOUR, minute=MEMORY_MINUTE)
+
+# Старое ежегодное сообщение (для совместимости)
 scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DAY, hour=YEARLY_HOUR, minute=YEARLY_MINUTE)
+
+# Проверка множественных ежегодных событий (каждую минуту)
+scheduler.add_job(check_and_send_yearly_events, "cron", minute="*")
 
 async def on_startup(dispatcher):
     try:
