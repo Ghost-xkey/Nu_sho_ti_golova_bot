@@ -100,6 +100,7 @@ async def send_yearly_event_message(event_data):
 
 async def check_and_send_yearly_events():
     """Проверяет и отправляет ежегодные события по расписанию"""
+    print("🚀 check_and_send_yearly_events function started!")
     try:
         # Получаем текущую дату и время
         now = datetime.datetime.now()
@@ -111,6 +112,7 @@ async def check_and_send_yearly_events():
         print(f"🔍 Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
         
         # Получаем все активные ежегодные события
+        print("📊 Getting yearly events from database...")
         events = get_yearly_events()
         print(f"📅 Found {len(events)} active yearly events")
         
@@ -130,6 +132,8 @@ async def check_and_send_yearly_events():
                 await send_yearly_event_message(event)
             else:
                 print(f"⏰ Event {name} doesn't match current time: {day}.{month} {hour}:{minute:02d} vs {current_day}.{current_month} {current_hour}:{current_minute:02d}")
+        
+        print("✅ check_and_send_yearly_events function completed successfully!")
         
     except Exception as e:
         print(f"❌ Error checking yearly events: {e}")
