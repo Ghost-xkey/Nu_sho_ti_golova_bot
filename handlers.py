@@ -75,11 +75,9 @@ async def handle_video(message: types.Message):
         )
         
         if success:
-            video_count = get_video_count()
-            await message.reply(f"🎥 Видеосообщение сохранено! Всего в коллекции: {video_count}")
             logging.info(f"Video saved from user {user.id}: {video.file_id}")
         else:
-            await message.reply("❌ Ошибка при сохранении видеосообщения")
+            logging.error(f"Failed to save video from user {user.id}: {video.file_id}")
             
     except Exception as e:
         logging.error(f"Error handling video: {e}")
