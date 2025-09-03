@@ -56,13 +56,20 @@ def create_tables():
         conn.commit()
         print("Tables created successfully")
         
-        # Проверим, что таблица создалась
+        # Проверим, что таблицы создались
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='video_messages'")
         result = cursor.fetchone()
         if result:
             print("video_messages table exists")
         else:
             print("ERROR: video_messages table not found!")
+            
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='yearly_events'")
+        result = cursor.fetchone()
+        if result:
+            print("yearly_events table exists")
+        else:
+            print("ERROR: yearly_events table not found!")
             
     except Exception as e:
         print(f"Error creating tables: {e}")
@@ -179,6 +186,19 @@ def add_yearly_event(name, day, month, hour=10, minute=0, message="", music_url=
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        # Проверим, что таблица существует
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='yearly_events'")
+        result = cursor.fetchone()
+        if not result:
+            print("ERROR: yearly_events table does not exist! Creating tables...")
+            create_tables()
+            # Проверим еще раз
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='yearly_events'")
+            result = cursor.fetchone()
+            if not result:
+                print("ERROR: Failed to create yearly_events table!")
+                return False
+        
         print("Executing INSERT query...")
         cursor.execute('''INSERT INTO yearly_events 
                          (name, day, month, hour, minute, message, music_url, photo_file_id)
