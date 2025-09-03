@@ -12,17 +12,36 @@ def get_db_connection():
     db_dir = os.path.dirname(DB_PATH)
     print(f"Database directory: {db_dir}")
     
-    if db_dir and not os.path.exists(db_dir):
-        print(f"Creating directory: {db_dir}")
-        os.makedirs(db_dir, exist_ok=True)
-        print(f"Created directory: {db_dir}")
+    # Принудительно создаем папку /app/data если она не существует
+    if db_dir and db_dir != '':
+        try:
+            print(f"Creating directory: {db_dir}")
+            os.makedirs(db_dir, exist_ok=True)
+            print(f"✅ Directory created/verified: {db_dir}")
+        except Exception as e:
+            print(f"❌ Error creating directory {db_dir}: {e}")
+            # Fallback: используем /tmp если не можем создать /app/data
+            fallback_path = '/tmp/bot_database.db'
+            print(f"🔄 Using fallback path: {fallback_path}")
+            conn = sqlite3.connect(fallback_path)
+            print(f"Database connection successful (fallback)")
+            return conn
     else:
         print(f"Directory already exists: {db_dir}")
     
     print(f"Connecting to database: {DB_PATH}")
-    conn = sqlite3.connect(DB_PATH)
-    print(f"Database connection successful")
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        print(f"✅ Database connection successful")
+        return conn
+    except Exception as e:
+        print(f"❌ Error connecting to database: {e}")
+        # Fallback: используем /tmp если не можем подключиться
+        fallback_path = '/tmp/bot_database.db'
+        print(f"🔄 Using fallback path: {fallback_path}")
+        conn = sqlite3.connect(fallback_path)
+        print(f"Database connection successful (fallback)")
+        return conn
 
 def create_tables():
     print("create_tables function called")
