@@ -352,7 +352,7 @@ async def cmd_add_yearly_event(message: types.Message):
         
         logging.info(f"Adding yearly event: name={name}, day={day}, month={month}, hour={hour}, minute={minute}")
         
-        success = add_yearly_event(name, day, month, hour, minute)
+        success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
         
         logging.info(f"Add yearly event result: {success}")
         
