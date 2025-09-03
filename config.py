@@ -1,5 +1,5 @@
 TOKEN = '7255987005:AAEMSy4B0zWvJcH5RoJas9o4pEYvPMA__0g'
-DB_PATH = ':memory:'  # База данных в памяти для тестирования
+DB_PATH = './bot_database.db'  # Файловая база данных
 CHAT_ID = '-1002512455884'
 
 # Настройки времени отправки воспоминаний
