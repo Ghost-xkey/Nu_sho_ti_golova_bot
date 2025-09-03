@@ -157,23 +157,52 @@ async def cmd_add_video(message: types.Message):
 async def cmd_test_yearly(message: types.Message):
     """Тестирует ежегодное сообщение (для админов)"""
     try:
+        logging.info(f"Test yearly command received from user {message.from_user.id}")
+        
         # Проверяем, что это админ
         admin_ids = [203593418]  # Замените на ID админов
         
+        logging.info(f"User ID: {message.from_user.id}, Admin IDs: {admin_ids}")
+        
         if message.from_user.id not in admin_ids:
+            logging.warning(f"User {message.from_user.id} is not admin")
             await message.answer("❌ У вас нет прав для выполнения этой команды")
             return
+        
+        logging.info("User is admin, proceeding with test")
         
         # Импортируем функцию отправки
         from utils import send_yearly_message
         
         # Отправляем тестовое сообщение
+        logging.info("Sending yearly message...")
         await send_yearly_message()
+        logging.info("Yearly message sent successfully")
         await message.answer("✅ Ежегодное сообщение отправлено в группу!")
             
     except Exception as e:
         logging.error(f"Error in test_yearly command: {e}")
+        import traceback
+        traceback.print_exc()
         await message.answer("❌ Ошибка при отправке тестового сообщения")
+
+@router.message(Command(commands=["my_id"]))
+async def cmd_my_id(message: types.Message):
+    """Показывает ID пользователя для отладки"""
+    try:
+        user_id = message.from_user.id
+        username = message.from_user.username or "Нет username"
+        first_name = message.from_user.first_name or "Нет имени"
+        
+        await message.answer(f"🆔 Ваш ID: {user_id}\n"
+                           f"👤 Username: @{username}\n"
+                           f"📝 Имя: {first_name}")
+        
+        logging.info(f"User ID check: {user_id}, username: {username}, name: {first_name}")
+        
+    except Exception as e:
+        logging.error(f"Error in my_id command: {e}")
+        await message.answer("❌ Ошибка при получении ID")
 
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
