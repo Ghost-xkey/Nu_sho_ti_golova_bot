@@ -10,13 +10,22 @@ except Exception as e:
 def get_db_connection():
     import os
     
+    print(f"get_db_connection called with DB_PATH: {DB_PATH}")
+    
     # Создаем директорию если не существует
     db_dir = os.path.dirname(DB_PATH)
+    print(f"Database directory: {db_dir}")
+    
     if db_dir and not os.path.exists(db_dir):
+        print(f"Creating directory: {db_dir}")
         os.makedirs(db_dir, exist_ok=True)
         print(f"Created directory: {db_dir}")
+    else:
+        print(f"Directory already exists: {db_dir}")
     
+    print(f"Connecting to database: {DB_PATH}")
     conn = sqlite3.connect(DB_PATH)
+    print(f"Database connection successful")
     return conn
 
 def create_tables():
