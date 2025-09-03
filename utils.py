@@ -1,5 +1,5 @@
 from aiogram import Bot
-from config import TOKEN, CHAT_ID
+from config import TOKEN, CHAT_ID, YEARLY_MESSAGE, YANDEX_TRACK_URL
 from db import get_random_video, get_video_count
 
 async def send_daily_message():
@@ -32,7 +32,15 @@ async def send_daily_message():
 async def send_yearly_message():
     bot = Bot(token=TOKEN)
     try:
-        await bot.send_message(chat_id=CHAT_ID, text="Ну шо ты лысый @perfomers")
+        # Отправляем сообщение с текстом и ссылкой на трек
+        message_text = f"{YEARLY_MESSAGE}\n\n🎵 Музыка: {YANDEX_TRACK_URL}"
+        
+        await bot.send_message(chat_id=CHAT_ID, text=message_text)
+        print("Yearly message sent successfully")
+        
+        # TODO: Добавить отправку картинки когда она будет загружена
+        # await bot.send_photo(chat_id=CHAT_ID, photo=photo_file_id)
+        
     except Exception as e:
         print(f"Error sending yearly message: {e}")
     finally:

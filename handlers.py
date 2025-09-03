@@ -153,6 +153,28 @@ async def cmd_add_video(message: types.Message):
         logging.error(f"Error in add_video command: {e}")
         await message.answer("❌ Ошибка при добавлении видео")
 
+@router.message(Command(commands=["test_yearly"]))
+async def cmd_test_yearly(message: types.Message):
+    """Тестирует ежегодное сообщение (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]  # Замените на ID админов
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        # Импортируем функцию отправки
+        from utils import send_yearly_message
+        
+        # Отправляем тестовое сообщение
+        await send_yearly_message()
+        await message.answer("✅ Ежегодное сообщение отправлено в группу!")
+            
+    except Exception as e:
+        logging.error(f"Error in test_yearly command: {e}")
+        await message.answer("❌ Ошибка при отправке тестового сообщения")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
