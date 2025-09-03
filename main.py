@@ -47,7 +47,16 @@ async def on_startup(dispatcher):
     try:
         logging.info("Starting bot")
         logging.info("Creating database tables...")
-        create_tables()
+        
+        # Принудительно создаем таблицы
+        try:
+            create_tables()
+            logging.info("✅ Database tables created successfully in on_startup")
+        except Exception as db_error:
+            logging.error(f"❌ Error creating tables in on_startup: {db_error}")
+            import traceback
+            traceback.print_exc()
+        
         logging.info("Database initialized")
         
         logging.info("Starting scheduler...")
