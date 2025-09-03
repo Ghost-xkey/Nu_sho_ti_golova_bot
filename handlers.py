@@ -348,13 +348,21 @@ async def cmd_add_yearly_event(message: types.Message):
             return
         
         # Добавляем событие
-        from db import add_yearly_event
+        from db import add_yearly_event, get_yearly_events
         
         logging.info(f"Adding yearly event: name={name}, day={day}, month={month}, hour={hour}, minute={minute}")
+        
+        # Проверим, что таблица существует
+        existing_events = get_yearly_events()
+        logging.info(f"Existing events count: {len(existing_events)}")
         
         success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
         
         logging.info(f"Add yearly event result: {success}")
+        
+        # Проверим, что событие добавилось
+        events_after = get_yearly_events()
+        logging.info(f"Events after adding: {len(events_after)}")
         
         if success:
             await message.answer(f"✅ Ежегодное событие добавлено!\n\n"
