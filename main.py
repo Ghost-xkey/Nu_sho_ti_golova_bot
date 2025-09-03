@@ -26,12 +26,15 @@ scheduler.add_job(send_yearly_message, "cron", month=7, day=25, hour=MEMORY_HOUR
 async def on_startup(dispatcher):
     try:
         logging.info("Starting bot")
+        logging.info("Creating database tables...")
         create_tables()
         logging.info("Database initialized")
         scheduler.start()
         logging.info("Scheduler started")
     except Exception as e:
         logging.error(f"Error during startup: {e}")
+        import traceback
+        traceback.print_exc()
 
 async def on_shutdown(dispatcher):
     try:

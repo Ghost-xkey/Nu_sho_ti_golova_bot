@@ -1,6 +1,12 @@
 import sqlite3
 from config import DB_PATH
 
+# Создаем таблицы сразу при импорте модуля
+try:
+    create_tables()
+except Exception as e:
+    print(f"Error creating tables on import: {e}")
+
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     return conn
@@ -49,6 +55,12 @@ def save_video_message(file_id, file_unique_id, message_id, user_id, username, c
     cursor = conn.cursor()
     try:
         print(f"Attempting to save video: file_id={file_id}, user_id={user_id}, username={username}")
+        
+        # Проверяем, существует ли таблица
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='video_messages'")
+        if not cursor.fetchone():
+            print("Table video_messages does not exist, creating it...")
+            create_tables()
         
         cursor.execute('''INSERT OR IGNORE INTO video_messages 
                          (file_id, file_unique_id, message_id, user_id, username, caption)
