@@ -8,6 +8,14 @@ except Exception as e:
     print(f"Error creating tables on import: {e}")
 
 def get_db_connection():
+    import os
+    
+    # Создаем директорию если не существует
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+        print(f"Created directory: {db_dir}")
+    
     conn = sqlite3.connect(DB_PATH)
     return conn
 

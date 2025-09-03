@@ -1,5 +1,5 @@
 TOKEN = '7255987005:AAEMSy4B0zWvJcH5RoJas9o4pEYvPMA__0g'
-DB_PATH = '/app/bot_database.db'  # Абсолютный путь для Docker
+DB_PATH = './bot_database.db'  # Относительный путь
 CHAT_ID = '-1002512455884'
 
 # Настройки времени отправки воспоминаний
