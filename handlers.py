@@ -359,6 +359,12 @@ async def cmd_add_yearly_event(message: types.Message):
         # Попробуем вызвать функцию напрямую
         try:
             logging.info("Calling add_yearly_event function...")
+            logging.info(f"Parameters: name={name}, day={day}, month={month}, hour={hour}, minute={minute}")
+            
+            # Проверим, что функция импортирована
+            from db import add_yearly_event
+            logging.info(f"add_yearly_event function: {add_yearly_event}")
+            
             success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
             logging.info(f"Function call completed, result: {success}")
         except Exception as e:
