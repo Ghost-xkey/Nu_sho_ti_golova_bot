@@ -101,7 +101,9 @@ async def send_yearly_event_message(event_data):
 async def check_and_send_yearly_events():
     """Проверяет и отправляет ежегодные события по расписанию"""
     print("🚀 check_and_send_yearly_events function started!")
+    print("🔧 Function is being executed by scheduler")
     try:
+        print("✅ Entered try block successfully")
         # Получаем текущую дату и время
         now = datetime.datetime.now()
         current_day = now.day
