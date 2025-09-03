@@ -31,6 +31,7 @@ scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DA
 scheduler.add_job(check_and_send_yearly_events, "cron", minute="*")
 
 async def on_startup(dispatcher):
+    logging.info("🚀 on_startup function called!")
     try:
         logging.info("Starting bot")
         logging.info("Creating database tables...")
