@@ -333,18 +333,22 @@ async def cmd_add_yearly_event(message: types.Message):
                                "Пример: /add_yearly_event Новый_год 1 1")
             return
         
-        # Извлекаем название (может содержать подчеркивания вместо пробелов)
-        name = command_text[1].replace('_', ' ')
-        
-        # Извлекаем числовые параметры
+        # Извлекаем числовые параметры с конца
         try:
-            day = int(command_text[2])
-            month = int(command_text[3])
-            hour = int(command_text[4]) if len(command_text) > 4 else 10
-            minute = int(command_text[5]) if len(command_text) > 5 else 0
+            # Берем последние 4 элемента как числа
+            minute = int(command_text[-1]) if len(command_text) > 5 else 0
+            hour = int(command_text[-2]) if len(command_text) > 4 else 10
+            month = int(command_text[-3])
+            day = int(command_text[-4])
+            
+            # Все остальное - это название события
+            name_parts = command_text[1:-4] if len(command_text) > 5 else command_text[1:-2]
+            name = ' '.join(name_parts).replace('_', ' ')
+            
         except ValueError as e:
             await message.answer(f"❌ Ошибка в параметрах: {e}\n\n"
-                               "Убедитесь, что день, месяц, час и минута - это числа")
+                               "Убедитесь, что день, месяц, час и минута - это числа\n\n"
+                               "Пример: /add_yearly_event С днем улыбок 3 9 6 43")
             return
         
         # Добавляем событие
