@@ -962,6 +962,131 @@ async def callback_statistics(callback_query: types.CallbackQuery):
         logging.error(f"Error in statistics callback: {e}")
         await callback_query.answer("❌ Ошибка при открытии статистики")
 
+@router.callback_query(lambda c: c.data == "general_stats")
+async def callback_general_stats(callback_query: types.CallbackQuery):
+    """Обработчик общей статистики"""
+    try:
+        from db import get_video_count, get_total_users, get_yearly_events
+        from kb import get_back_to_menu_keyboard
+        
+        video_count = get_video_count()
+        total_users = get_total_users()
+        events = get_yearly_events()
+        active_events = len([e for e in events if e[9]])  # is_active
+        
+        text = "📊 **ОБЩАЯ СТАТИСТИКА** 📊\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        text += f"┌─ 📈 **ОСНОВНЫЕ ПОКАЗАТЕЛИ** ─────────────────┐\n"
+        text += f"│ 🎥 Видеосообщений: **{video_count}**\n"
+        text += f"│ 👥 Пользователей: **{total_users}**\n"
+        text += f"│ 📅 Всего событий: **{len(events)}**\n"
+        text += f"│ 🟢 Активных событий: **{active_events}**\n"
+        text += f"│ 🔴 Неактивных событий: **{len(events) - active_events}**\n"
+        text += f"└─────────────────────────────────────────┘\n\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += "💡 Используйте другие кнопки для детальной статистики"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in general_stats callback: {e}")
+        await callback_query.answer("❌ Ошибка при получении статистики")
+
+@router.callback_query(lambda c: c.data == "video_stats")
+async def callback_video_stats(callback_query: types.CallbackQuery):
+    """Обработчик статистики видео"""
+    try:
+        from db import get_video_count, get_user_stats
+        from kb import get_back_to_menu_keyboard
+        
+        video_count = get_video_count()
+        user_stats = get_user_stats()
+        
+        text = "🎥 **СТАТИСТИКА ВИДЕО** 🎥\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        text += f"┌─ 📹 **ВИДЕОСООБЩЕНИЯ** ─────────────────────┐\n"
+        text += f"│ 📊 Всего видео: **{video_count}**\n"
+        text += f"└─────────────────────────────────────────┘\n\n"
+        
+        if user_stats:
+            text += "┌─ 👥 **ТОП ПОЛЬЗОВАТЕЛЕЙ** ───────────────────┐\n"
+            for i, (username, count) in enumerate(user_stats[:5], 1):
+                text += f"│ {i}. {username}: **{count}** видео\n"
+            text += f"└─────────────────────────────────────────┘\n\n"
+        else:
+            text += "┌─ 👥 **ПОЛЬЗОВАТЕЛИ** ───────────────────────┐\n"
+            text += f"│ 📊 Пока нет данных\n"
+            text += f"└─────────────────────────────────────────┘\n\n"
+        
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += "💡 Отправляйте видеосообщения для пополнения статистики!"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in video_stats callback: {e}")
+        await callback_query.answer("❌ Ошибка при получении статистики видео")
+
+@router.callback_query(lambda c: c.data == "events_stats")
+async def callback_events_stats(callback_query: types.CallbackQuery):
+    """Обработчик статистики событий"""
+    try:
+        from db import get_yearly_events
+        from kb import get_back_to_menu_keyboard
+        
+        events = get_yearly_events()
+        active_events = [e for e in events if e[9]]  # is_active
+        
+        # Статистика по месяцам
+        month_stats = {}
+        for event in active_events:
+            month = event[3]  # month
+            month_names = {
+                1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
+                5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
+                9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
+            }
+            month_name = month_names.get(month, f"Месяц {month}")
+            month_stats[month_name] = month_stats.get(month_name, 0) + 1
+        
+        text = "📅 **СТАТИСТИКА СОБЫТИЙ** 📅\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        text += f"┌─ 📊 **ОБЩАЯ ИНФОРМАЦИЯ** ─────────────────┐\n"
+        text += f"│ 📈 Всего событий: **{len(events)}**\n"
+        text += f"│ 🟢 Активных: **{len(active_events)}**\n"
+        text += f"│ 🔴 Неактивных: **{len(events) - len(active_events)}**\n"
+        text += f"└─────────────────────────────────────────┘\n\n"
+        
+        if month_stats:
+            text += "┌─ 📆 **СОБЫТИЯ ПО МЕСЯЦАМ** ───────────────┐\n"
+            for month, count in sorted(month_stats.items()):
+                text += f"│ {month}: **{count}** событий\n"
+            text += f"└─────────────────────────────────────────┘\n\n"
+        
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += "💡 Добавляйте больше событий для разнообразия!"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in events_stats callback: {e}")
+        await callback_query.answer("❌ Ошибка при получении статистики событий")
+
 @router.callback_query(lambda c: c.data == "add_event")
 async def callback_add_event(callback_query: types.CallbackQuery):
     """Обработчик кнопки 'Добавить событие'"""
@@ -1017,3 +1142,38 @@ async def callback_help(callback_query: types.CallbackQuery):
     except Exception as e:
         logging.error(f"Error in help callback: {e}")
         await callback_query.answer("❌ Ошибка при открытии помощи")
+
+@router.callback_query(lambda c: c.data == "settings")
+async def callback_settings(callback_query: types.CallbackQuery):
+    """Обработчик кнопки 'Настройки'"""
+    try:
+        from kb import get_back_to_menu_keyboard
+        
+        text = "⚙️ **НАСТРОЙКИ** ⚙️\n\n"
+        text += "**Доступные настройки:**\n\n"
+        text += "🕐 **Время напоминаний:**\n"
+        text += "• Ежедневные воспоминания: 09:00\n"
+        text += "• Ежегодные события: по расписанию\n\n"
+        text += "🎵 **Медиа настройки:**\n"
+        text += "• Автосохранение видео: ✅\n"
+        text += "• Поддержка картинок: ✅\n"
+        text += "• Поддержка музыки: ✅\n\n"
+        text += "🌍 **Часовой пояс:**\n"
+        text += "• Текущий: Москва (UTC+3)\n\n"
+        text += "📊 **База данных:**\n"
+        text += "• Статус: ✅ Активна\n"
+        text += "• Путь: `/tmp/bot_database.db`\n\n"
+        text += "💡 **Для изменения настроек используйте команды:**\n"
+        text += "• `/init_db` - пересоздать БД\n"
+        text += "• `/reset_db` - сбросить БД"
+        
+        await callback_query.message.edit_text(
+            text=text,
+            reply_markup=get_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback_query.answer()
+        
+    except Exception as e:
+        logging.error(f"Error in settings callback: {e}")
+        await callback_query.answer("❌ Ошибка при открытии настроек")
