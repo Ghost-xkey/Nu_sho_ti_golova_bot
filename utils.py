@@ -141,3 +141,30 @@ async def check_and_send_yearly_events():
         print(f"❌ Error checking yearly events: {e}")
         import traceback
         traceback.print_exc()
+
+# Создадим простую синхронную версию для тестирования
+def check_and_send_yearly_events_sync():
+    """Синхронная версия для тестирования"""
+    print("🧪 SYNC check_and_send_yearly_events function started!")
+    try:
+        print("✅ SYNC Entered try block successfully")
+        # Получаем текущую дату и время
+        now = datetime.datetime.now()
+        current_day = now.day
+        current_month = now.month
+        current_hour = now.hour
+        current_minute = now.minute
+        
+        print(f"🔍 SYNC Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
+        
+        # Получаем все активные ежегодные события
+        print("📊 SYNC Getting yearly events from database...")
+        events = get_yearly_events()
+        print(f"📅 SYNC Found {len(events)} active yearly events")
+        
+        print("✅ SYNC check_and_send_yearly_events function completed successfully!")
+        
+    except Exception as e:
+        print(f"❌ SYNC Error checking yearly events: {e}")
+        import traceback
+        traceback.print_exc()

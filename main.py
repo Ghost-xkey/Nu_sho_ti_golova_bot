@@ -4,7 +4,7 @@ from aiogram.utils.markdown import hbold
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import TOKEN, MEMORY_HOUR, MEMORY_MINUTE, YEARLY_DAY, YEARLY_MONTH, YEARLY_HOUR, YEARLY_MINUTE
 from handlers import router
-from utils import send_daily_message, send_yearly_message, check_and_send_yearly_events
+from utils import send_daily_message, send_yearly_message, check_and_send_yearly_events, check_and_send_yearly_events_sync
 from db import create_tables
 from middlewares import ExampleMiddleware
 
@@ -29,6 +29,9 @@ scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DA
 
 # Проверка множественных ежегодных событий (каждые 30 секунд для тестирования)
 scheduler.add_job(check_and_send_yearly_events, "interval", seconds=30)
+
+# Синхронная версия для тестирования (каждые 15 секунд)
+scheduler.add_job(check_and_send_yearly_events_sync, "interval", seconds=15)
 
 # Тестовая функция для проверки планировщика (каждые 10 секунд)
 async def test_scheduler():
