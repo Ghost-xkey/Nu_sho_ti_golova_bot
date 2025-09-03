@@ -76,7 +76,7 @@ async def send_yearly_event_message(event_data):
         event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event_data
         
         # Формируем сообщение
-        full_message = f"🎉 **{name}**\n\n{message_text}"
+        full_message = f"🎉{name}!"
         
         if music_url:
             full_message += f"\n\n🎵 Музыка: {music_url}"
