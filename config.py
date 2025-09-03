@@ -31,3 +31,12 @@ def remove_yearly_photo():
 def get_yearly_photo():
     """Возвращает file_id картинки для ежегодного сообщения"""
     return YEARLY_PHOTO_FILE_ID
+
+# Настройки AI-чата
+YANDEX_API_KEY = "YOUR_YANDEX_API_KEY_HERE"  # Замените на ваш API ключ
+YANDEX_FOLDER_ID = "YOUR_YANDEX_FOLDER_ID_HERE"  # Замените на ваш Folder ID
+
+# Настройки AI поведения
+AI_ENABLED = True  # Включен ли AI-чат
+AI_RESPONSE_CHANCE = 0.1  # Вероятность случайного ответа (10%)
+AI_MAX_RESPONSES_PER_HOUR = 20  # Максимум ответов в час

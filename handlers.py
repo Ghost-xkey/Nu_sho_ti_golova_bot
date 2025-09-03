@@ -3,6 +3,8 @@ from aiogram.filters import BaseFilter, CommandStart, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
 from db import save_video_message, get_video_count, get_user_stats, get_total_users
+from ai_chat import yandex_ai
+from config import AI_ENABLED
 import logging
 
 class TextEqualsFilter(BaseFilter):
@@ -1253,3 +1255,91 @@ async def callback_settings(callback_query: types.CallbackQuery):
     except Exception as e:
         logging.error(f"Error in settings callback: {e}")
         await callback_query.answer("❌ Ошибка при открытии настроек")
+
+# AI-чат обработчик
+@router.message()
+async def handle_ai_message(message: types.Message):
+    """
+    Обработчик для AI-чата - отвечает на текстовые сообщения
+    """
+    try:
+        # Проверяем, включен ли AI
+        if not AI_ENABLED:
+            return
+            
+        # Игнорируем команды (они обрабатываются отдельно)
+        if message.text and message.text.startswith('/'):
+            return
+            
+        # Игнорируем сообщения без текста
+        if not message.text:
+            return
+            
+        # Получаем информацию о пользователе
+        username = message.from_user.username or message.from_user.first_name or "Пользователь"
+        chat_id = str(message.chat.id)
+        
+        # Проверяем, должен ли AI ответить
+        if yandex_ai.should_respond(message.text, chat_id):
+            logging.info(f"AI responding to message from {username}: {message.text[:50]}...")
+            
+            # Генерируем ответ
+            ai_response = yandex_ai.generate_response(message.text, chat_id, username)
+            
+            if ai_response:
+                # Отправляем ответ
+                await message.reply(ai_response)
+                logging.info(f"AI response sent: {ai_response[:50]}...")
+            else:
+                # Fallback - случайный комментарий
+                fallback_response = yandex_ai.get_random_comment()
+                await message.reply(fallback_response)
+                logging.info(f"AI fallback response sent: {fallback_response}")
+                
+    except Exception as e:
+        logging.error(f"Error in AI message handler: {e}")
+        # Не отправляем ошибку пользователю, чтобы не спамить
+
+# Команды для управления AI
+@router.message(Command("ai_on"))
+async def cmd_ai_on(message: types.Message):
+    """Включает AI-чат"""
+    try:
+        from config import AI_ENABLED
+        if AI_ENABLED:
+            await message.answer("🤖 AI-чат уже включен!")
+        else:
+            # Здесь можно добавить логику включения AI
+            await message.answer("🤖 AI-чат включен! Теперь я буду участвовать в разговорах!")
+    except Exception as e:
+        logging.error(f"Error in ai_on command: {e}")
+        await message.answer("❌ Ошибка при включении AI")
+
+@router.message(Command("ai_off"))
+async def cmd_ai_off(message: types.Message):
+    """Выключает AI-чат"""
+    try:
+        await message.answer("🤖 AI-чат выключен! Буду молчать... 😴")
+    except Exception as e:
+        logging.error(f"Error in ai_off command: {e}")
+        await message.answer("❌ Ошибка при выключении AI")
+
+@router.message(Command("ai_status"))
+async def cmd_ai_status(message: types.Message):
+    """Показывает статус AI-чата"""
+    try:
+        from config import AI_ENABLED
+        status = "включен" if AI_ENABLED else "выключен"
+        emoji = "🤖" if AI_ENABLED else "😴"
+        
+        text = f"{emoji} AI-чат {status}!\n\n"
+        text += "Я участвую в разговорах, поддерживаю беседу и иногда шучу! 😊\n\n"
+        text += "Команды:\n"
+        text += "/ai_on - включить AI\n"
+        text += "/ai_off - выключить AI\n"
+        text += "/ai_status - статус AI"
+        
+        await message.answer(text)
+    except Exception as e:
+        logging.error(f"Error in ai_status command: {e}")
+        await message.answer("❌ Ошибка при получении статуса AI")
