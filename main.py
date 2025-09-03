@@ -36,8 +36,17 @@ async def on_startup(dispatcher):
         logging.info("Creating database tables...")
         create_tables()
         logging.info("Database initialized")
+        
+        logging.info("Starting scheduler...")
         scheduler.start()
-        logging.info("Scheduler started")
+        logging.info("Scheduler started successfully")
+        
+        # Проверим, что задачи добавлены
+        jobs = scheduler.get_jobs()
+        logging.info(f"Scheduler has {len(jobs)} jobs:")
+        for job in jobs:
+            logging.info(f"  - {job.name}: {job.trigger}")
+            
     except Exception as e:
         logging.error(f"Error during startup: {e}")
         import traceback

@@ -108,15 +108,17 @@ async def check_and_send_yearly_events():
         current_hour = now.hour
         current_minute = now.minute
         
-        print(f"Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
+        print(f"🔍 Checking yearly events for {current_day}.{current_month} at {current_hour}:{current_minute:02d}")
         
         # Получаем все активные ежегодные события
         events = get_yearly_events()
-        print(f"Found {len(events)} active yearly events")
+        print(f"📅 Found {len(events)} active yearly events")
         
         # Проверяем каждое событие
         for event in events:
             event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event
+            
+            print(f"🎯 Checking event: {name} scheduled for {day}.{month} {hour}:{minute:02d}")
             
             # Проверяем, совпадает ли дата и время
             if (day == current_day and 
@@ -124,12 +126,12 @@ async def check_and_send_yearly_events():
                 hour == current_hour and 
                 minute == current_minute):
                 
-                print(f"Found matching event: {name} at {day}.{month} {hour}:{minute:02d}")
+                print(f"✅ Found matching event: {name} at {day}.{month} {hour}:{minute:02d}")
                 await send_yearly_event_message(event)
             else:
-                print(f"Event {name} doesn't match current time: {day}.{month} {hour}:{minute:02d} vs {current_day}.{current_month} {current_hour}:{current_minute:02d}")
+                print(f"⏰ Event {name} doesn't match current time: {day}.{month} {hour}:{minute:02d} vs {current_day}.{current_month} {current_hour}:{current_minute:02d}")
         
     except Exception as e:
-        print(f"Error checking yearly events: {e}")
+        print(f"❌ Error checking yearly events: {e}")
         import traceback
         traceback.print_exc()
