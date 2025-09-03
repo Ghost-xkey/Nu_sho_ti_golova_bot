@@ -402,11 +402,34 @@ async def cmd_add_yearly_event(message: types.Message):
         logging.info(f"Events after adding: {len(events_after)}")
         
         if success:
-            photo_info = f"\n📷 Картинка: {'Да' if photo_file_id else 'Нет'}"
-            await message.answer(f"✅ Ежегодное событие добавлено!\n\n"
-                               f"📅 Название: {name}\n"
-                               f"📆 Дата: {day}.{month}\n"
-                               f"⏰ Время: {hour:02d}:{minute:02d}{photo_info}")
+            # Определяем эмодзи для месяца
+            month_emojis = {
+                1: "❄️", 2: "💝", 3: "🌸", 4: "🌱", 5: "🌺", 6: "☀️",
+                7: "🏖️", 8: "🌻", 9: "🍂", 10: "🎃", 11: "🍁", 12: "🎄"
+            }
+            month_emoji = month_emojis.get(month, "📅")
+            
+            # Красивое сообщение об успешном добавлении
+            success_text = "🎉 **СОБЫТИЕ УСПЕШНО ДОБАВЛЕНО!** 🎉\n"
+            success_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            success_text += f"┌─ 🎯 **НОВОЕ СОБЫТИЕ** ─────────────────────┐\n"
+            success_text += f"│ 🏷️ Название: **{name}**\n"
+            success_text += f"│ {month_emoji} Дата: **{day:02d}.{month:02d}** в **{hour:02d}:{minute:02d}**\n"
+            success_text += f"│ 💬 Сообщение: {name}!\n"
+            
+            # Информация о медиа
+            if photo_file_id:
+                success_text += f"│ 📷 Картинка: ✅\n"
+            else:
+                success_text += f"│ 📷 Картинка: ❌\n"
+            
+            success_text += f"│ 🎵 Музыка: ❌\n"
+            success_text += f"│ 🟢 Статус: **Активно**\n"
+            success_text += f"└─────────────────────────────────────────┘\n\n"
+            success_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            success_text += "💡 Используйте `/list_yearly_events` для просмотра всех событий"
+            
+            await message.answer(success_text, parse_mode="Markdown")
         else:
             await message.answer("❌ Ошибка при добавлении события")
             
@@ -426,15 +449,49 @@ async def cmd_list_yearly_events(message: types.Message):
             await message.answer("📅 Ежегодных событий пока нет")
             return
         
-        events_text = "📅 **Ежегодные события:**\n\n"
+        events_text = "🎉 **ЕЖЕГОДНЫЕ СОБЫТИЯ** 🎉\n"
+        events_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         
-        for event in events:
+        for i, event in enumerate(events, 1):
             event_id, name, day, month, hour, minute, message_text, music_url, photo_file_id, is_active, created_at = event
-            events_text += f"🆔 **{event_id}** - {name}\n"
-            events_text += f"📆 {day:02d}.{month:02d} в {hour:02d}:{minute:02d}\n"
-            events_text += f"💬 {message_text[:50]}{'...' if len(message_text) > 50 else ''}\n\n"
+            
+            # Определяем эмодзи для месяца
+            month_emojis = {
+                1: "❄️", 2: "💝", 3: "🌸", 4: "🌱", 5: "🌺", 6: "☀️",
+                7: "🏖️", 8: "🌻", 9: "🍂", 10: "🎃", 11: "🍁", 12: "🎄"
+            }
+            month_emoji = month_emojis.get(month, "📅")
+            
+            # Красивая карточка события
+            events_text += f"┌─ 🎯 **СОБЫТИЕ #{i}** ─────────────────────┐\n"
+            events_text += f"│ 🆔 ID: `{event_id}`\n"
+            events_text += f"│ 🏷️ Название: **{name}**\n"
+            events_text += f"│ {month_emoji} Дата: **{day:02d}.{month:02d}** в **{hour:02d}:{minute:02d}**\n"
+            events_text += f"│ 💬 Сообщение: {message_text}\n"
+            
+            # Добавляем информацию о медиа
+            if music_url:
+                events_text += f"│ 🎵 Музыка: [Ссылка]({music_url})\n"
+            else:
+                events_text += f"│ 🎵 Музыка: ❌\n"
+                
+            if photo_file_id:
+                events_text += f"│ 📷 Картинка: ✅\n"
+            else:
+                events_text += f"│ 📷 Картинка: ❌\n"
+            
+            # Статус активности
+            status_emoji = "🟢" if is_active else "🔴"
+            status_text = "Активно" if is_active else "Неактивно"
+            events_text += f"│ {status_emoji} Статус: **{status_text}**\n"
+            
+            events_text += f"└─────────────────────────────────────────┘\n\n"
         
-        await message.answer(events_text)
+        events_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        events_text += f"📊 **Всего событий:** {len(events)}\n"
+        events_text += "💡 Используйте `/delete_yearly_event <ID>` для удаления"
+        
+        await message.answer(events_text, parse_mode="Markdown")
         
     except Exception as e:
         logging.error(f"Error in list_yearly_events command: {e}")
@@ -465,7 +522,17 @@ async def cmd_delete_yearly_event(message: types.Message):
         success = delete_yearly_event(event_id)
         
         if success:
-            await message.answer(f"✅ Событие {event_id} удалено!")
+            # Красивое сообщение об удалении
+            delete_text = "🗑️ **СОБЫТИЕ УДАЛЕНО!** 🗑️\n"
+            delete_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            delete_text += f"┌─ 🎯 **УДАЛЕННОЕ СОБЫТИЕ** ─────────────────┐\n"
+            delete_text += f"│ 🆔 ID: **{event_id}**\n"
+            delete_text += f"│ 🔴 Статус: **Удалено**\n"
+            delete_text += f"└─────────────────────────────────────────┘\n\n"
+            delete_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            delete_text += "💡 Используйте `/list_yearly_events` для просмотра оставшихся событий"
+            
+            await message.answer(delete_text, parse_mode="Markdown")
         else:
             await message.answer("❌ Ошибка при удалении события")
             
