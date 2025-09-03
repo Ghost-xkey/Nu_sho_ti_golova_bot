@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.markdown import hbold
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from config import TOKEN
+from config import TOKEN, MEMORY_HOUR, MEMORY_MINUTE
 from handlers import router
 from utils import send_daily_message, send_yearly_message
 from db import create_tables
@@ -20,8 +20,8 @@ dp.message.middleware(ExampleMiddleware())
 dp.include_router(router)
 
 scheduler = AsyncIOScheduler()
-scheduler.add_job(send_daily_message, "cron", hour=9, minute=0)
-scheduler.add_job(send_yearly_message, "cron", month=7, day=25, hour=9, minute=0)
+scheduler.add_job(send_daily_message, "cron", hour=MEMORY_HOUR, minute=MEMORY_MINUTE)
+scheduler.add_job(send_yearly_message, "cron", month=7, day=25, hour=MEMORY_HOUR, minute=MEMORY_MINUTE)
 
 async def on_startup(dispatcher):
     try:

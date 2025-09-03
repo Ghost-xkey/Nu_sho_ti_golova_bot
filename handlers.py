@@ -2,7 +2,7 @@ from aiogram import Router, types
 from aiogram.filters import BaseFilter, CommandStart, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
-from db import save_video_message, get_video_count
+from db import save_video_message, get_video_count, get_user_stats, get_total_users
 import logging
 
 class TextEqualsFilter(BaseFilter):
@@ -49,6 +49,68 @@ async def cmd_videos(message: types.Message):
     except Exception as e:
         logging.error(f"Error in videos command: {e}")
         await message.answer("❌ Ошибка при получении статистики")
+
+@router.message(Command(commands=["random"]))
+async def cmd_random_video(message: types.Message):
+    """Отправляет случайное видео прямо сейчас"""
+    try:
+        from db import get_random_video
+        
+        video_data = get_random_video()
+        
+        if video_data:
+            file_id, file_unique_id, username, caption = video_data
+            message_text = f"🎥 Случайное воспоминание!\n\n📹 От: {username}"
+            
+            await message.answer_video(
+                video=file_id,
+                caption=message_text
+            )
+            logging.info(f"Random video sent manually by user {message.from_user.id}")
+        else:
+            await message.answer("🎥 Коллекция воспоминаний пуста.\n\n"
+                               f"Отправьте видеосообщения в группу, чтобы бот их сохранил!")
+    except Exception as e:
+        logging.error(f"Error in random video command: {e}")
+        await message.answer("❌ Ошибка при отправке случайного видео")
+
+@router.message(Command(commands=["stats"]))
+async def cmd_stats(message: types.Message):
+    """Показывает статистику по пользователям"""
+    try:
+        video_count = get_video_count()
+        total_users = get_total_users()
+        user_stats = get_user_stats()
+        
+        if video_count > 0:
+            stats_text = f"📊 Статистика коллекции воспоминаний:\n\n"
+            stats_text += f"🎥 Всего видео: {video_count}\n"
+            stats_text += f"👥 Участников: {total_users}\n\n"
+            stats_text += f"🏆 Топ участников:\n"
+            
+            for i, (username, count) in enumerate(user_stats[:5], 1):
+                stats_text += f"{i}. {username}: {count} видео\n"
+                
+            await message.answer(stats_text)
+        else:
+            await message.answer("📊 Статистика пуста.\n\n"
+                               f"Отправьте видеосообщения в группу, чтобы увидеть статистику!")
+    except Exception as e:
+        logging.error(f"Error in stats command: {e}")
+        await message.answer("❌ Ошибка при получении статистики")
+
+@router.message(Command(commands=["time"]))
+async def cmd_time(message: types.Message):
+    """Показывает текущее время отправки воспоминаний"""
+    try:
+        from config import MEMORY_HOUR, MEMORY_MINUTE
+        
+        time_str = f"{MEMORY_HOUR:02d}:{MEMORY_MINUTE:02d}"
+        await message.answer(f"⏰ Время отправки воспоминаний: {time_str}\n\n"
+                           f"Для изменения времени обратитесь к администратору бота.")
+    except Exception as e:
+        logging.error(f"Error in time command: {e}")
+        await message.answer("❌ Ошибка при получении времени")
 
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):

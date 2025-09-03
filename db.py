@@ -72,3 +72,34 @@ def get_video_count():
         return 0
     finally:
         conn.close()
+
+def get_user_stats():
+    """Возвращает статистику по пользователям"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''SELECT username, COUNT(*) as video_count 
+                         FROM video_messages 
+                         GROUP BY user_id, username 
+                         ORDER BY video_count DESC''')
+        result = cursor.fetchall()
+        return result
+    except Exception as e:
+        print(f"Error getting user stats: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_total_users():
+    """Возвращает количество уникальных пользователей"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT COUNT(DISTINCT user_id) FROM video_messages')
+        result = cursor.fetchone()
+        return result[0] if result else 0
+    except Exception as e:
+        print(f"Error getting total users: {e}")
+        return 0
+    finally:
+        conn.close()
