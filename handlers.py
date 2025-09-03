@@ -34,7 +34,7 @@ async def cmd_start(message: types.Message):
         text += "Это бот для управления ежегодными событиями и видеосообщениями!\n\n"
         text += "Выберите действие из меню ниже:"
         
-        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode=None)
         logging.info("Start command response sent")
     except Exception as e:
         logging.error(f"Error in start command: {e}")
@@ -53,7 +53,7 @@ async def cmd_menu(message: types.Message):
         text = "🎉 **ГЛАВНОЕ МЕНЮ** 🎉\n\n"
         text += "Выберите действие из меню ниже:"
         
-        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+        await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode=None)
         
     except Exception as e:
         logging.error(f"Error in menu command: {e}")
@@ -455,12 +455,12 @@ async def cmd_add_yearly_event(message: types.Message):
                 success_text += f"│ 📷 Картинка: ❌\n"
             
             success_text += f"│ 🎵 Музыка: ❌\n"
-            success_text += f"│ 🟢 Статус: **Активно**\n"
+            success_text += f"│ 🟢 Статус: Активно\n"
             success_text += f"└─────────────────────────────────────────┘\n\n"
             success_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             success_text += "💡 Используйте `/list_yearly_events` для просмотра всех событий"
             
-            await message.answer(success_text, parse_mode="Markdown")
+            await message.answer(success_text, parse_mode=None)
         else:
             await message.answer("❌ Ошибка при добавлении события")
             
@@ -514,15 +514,15 @@ async def cmd_list_yearly_events(message: types.Message):
             # Статус активности
             status_emoji = "🟢" if is_active else "🔴"
             status_text = "Активно" if is_active else "Неактивно"
-            events_text += f"│ {status_emoji} Статус: **{status_text}**\n"
+            events_text += f"│ {status_emoji} Статус: {status_text}\n"
             
             events_text += f"└─────────────────────────────────────────┘\n\n"
         
         events_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        events_text += f"📊 **Всего событий:** {len(events)}\n"
+        events_text += f"📊 Всего событий: {len(events)}\n"
         events_text += "💡 Используйте `/delete_yearly_event <ID>` для удаления"
         
-        await message.answer(events_text, parse_mode="Markdown")
+        await message.answer(events_text, parse_mode=None)
         
     except Exception as e:
         logging.error(f"Error in list_yearly_events command: {e}")
@@ -554,16 +554,16 @@ async def cmd_delete_yearly_event(message: types.Message):
         
         if success:
             # Красивое сообщение об удалении
-            delete_text = "🗑️ **СОБЫТИЕ УДАЛЕНО!** 🗑️\n"
+            delete_text = "🗑️ СОБЫТИЕ УДАЛЕНО! 🗑️\n"
             delete_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            delete_text += f"┌─ 🎯 **УДАЛЕННОЕ СОБЫТИЕ** ─────────────────┐\n"
-            delete_text += f"│ 🆔 ID: **{event_id}**\n"
-            delete_text += f"│ 🔴 Статус: **Удалено**\n"
+            delete_text += f"┌─ 🎯 УДАЛЕННОЕ СОБЫТИЕ ─────────────────┐\n"
+            delete_text += f"│ 🆔 ID: {event_id}\n"
+            delete_text += f"│ 🔴 Статус: Удалено\n"
             delete_text += f"└─────────────────────────────────────────┘\n\n"
             delete_text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             delete_text += "💡 Используйте `/list_yearly_events` для просмотра оставшихся событий"
             
-            await message.answer(delete_text, parse_mode="Markdown")
+            await message.answer(delete_text, parse_mode=None)
         else:
             await message.answer("❌ Ошибка при удалении события")
             
@@ -775,7 +775,7 @@ async def callback_main_menu(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_main_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -800,7 +800,7 @@ async def callback_list_events(callback_query: types.CallbackQuery):
             await callback_query.message.edit_text(
                 text=text,
                 reply_markup=get_back_to_menu_keyboard(),
-                parse_mode="Markdown"
+                parse_mode=None
             )
         else:
             text = f"📅 **ЕЖЕГОДНЫЕ СОБЫТИЯ** 📅\n\n"
@@ -810,7 +810,7 @@ async def callback_list_events(callback_query: types.CallbackQuery):
             await callback_query.message.edit_text(
                 text=text,
                 reply_markup=get_events_list_keyboard(events),
-                parse_mode="Markdown"
+                parse_mode=None
             )
         
         await callback_query.answer()
@@ -880,7 +880,7 @@ async def callback_event_details(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_event_actions_keyboard(event_id),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -902,7 +902,7 @@ async def callback_delete_event(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_confirm_delete_keyboard(event_id),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -933,7 +933,7 @@ async def callback_confirm_delete(callback_query: types.CallbackQuery):
             await callback_query.message.edit_text(
                 text=text,
                 reply_markup=get_back_to_menu_keyboard(),
-                parse_mode="Markdown"
+                parse_mode=None
             )
             await callback_query.answer("✅ Событие удалено!")
         else:
@@ -969,7 +969,7 @@ async def callback_statistics(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_statistics_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1004,7 +1004,7 @@ async def callback_general_stats(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1022,19 +1022,19 @@ async def callback_video_stats(callback_query: types.CallbackQuery):
         video_count = get_video_count()
         user_stats = get_user_stats()
         
-        text = "🎥 *СТАТИСТИКА ВИДЕО* 🎥\n"
+        text = "🎥 СТАТИСТИКА ВИДЕО 🎥\n"
         text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        text += f"┌─ 📹 *ВИДЕОСООБЩЕНИЯ* ─────────────────────┐\n"
-        text += f"│ 📊 Всего видео: *{video_count}*\n"
+        text += f"┌─ 📹 ВИДЕОСООБЩЕНИЯ ─────────────────────┐\n"
+        text += f"│ 📊 Всего видео: {video_count}\n"
         text += f"└─────────────────────────────────────────┘\n\n"
         
         if user_stats:
-            text += "┌─ 👥 *ТОП ПОЛЬЗОВАТЕЛЕЙ* ───────────────────┐\n"
+            text += "┌─ 👥 ТОП ПОЛЬЗОВАТЕЛЕЙ ───────────────────┐\n"
             for i, (username, count) in enumerate(user_stats[:5], 1):
-                text += f"│ {i}. {username}: *{count}* видео\n"
+                text += f"│ {i}. {username}: {count} видео\n"
             text += f"└─────────────────────────────────────────┘\n\n"
         else:
-            text += "┌─ 👥 *ПОЛЬЗОВАТЕЛИ* ───────────────────────┐\n"
+            text += "┌─ 👥 ПОЛЬЗОВАТЕЛИ ───────────────────────┐\n"
             text += f"│ 📊 Пока нет данных\n"
             text += f"└─────────────────────────────────────────┘\n\n"
         
@@ -1044,7 +1044,7 @@ async def callback_video_stats(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1094,7 +1094,7 @@ async def callback_events_stats(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1112,14 +1112,14 @@ async def callback_user_stats(callback_query: types.CallbackQuery):
         total_users = get_total_users()
         user_stats = get_user_stats()
         
-        text = "👥 *СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ* 👥\n"
+        text = "👥 СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ 👥\n"
         text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        text += f"┌─ 📊 *ОБЩАЯ ИНФОРМАЦИЯ* ─────────────────┐\n"
-        text += f"│ 👤 Всего пользователей: *{total_users}*\n"
+        text += f"┌─ 📊 ОБЩАЯ ИНФОРМАЦИЯ ─────────────────┐\n"
+        text += f"│ 👤 Всего пользователей: {total_users}\n"
         text += f"└─────────────────────────────────────────┘\n\n"
         
         if user_stats:
-            text += "┌─ 🏆 *ТОП ПОЛЬЗОВАТЕЛЕЙ ПО ВИДЕО* ───────┐\n"
+            text += "┌─ 🏆 ТОП ПОЛЬЗОВАТЕЛЕЙ ПО ВИДЕО ───────┐\n"
             for i, (username, count) in enumerate(user_stats[:10], 1):
                 # Добавляем эмодзи для топ-3
                 if i == 1:
@@ -1131,20 +1131,20 @@ async def callback_user_stats(callback_query: types.CallbackQuery):
                 else:
                     emoji = f"{i}."
                 
-                text += f"│ {emoji} {username}: *{count}* видео\n"
+                text += f"│ {emoji} {username}: {count} видео\n"
             text += f"└─────────────────────────────────────────┘\n\n"
             
             # Статистика активности
             total_videos = sum(count for _, count in user_stats)
             avg_videos = total_videos / len(user_stats) if user_stats else 0
             
-            text += "┌─ 📈 *СТАТИСТИКА АКТИВНОСТИ* ───────────┐\n"
-            text += f"│ 📊 Всего видео от пользователей: *{total_videos}*\n"
-            text += f"│ 📈 Среднее видео на пользователя: *{avg_videos:.1f}*\n"
-            text += f"│ 👥 Пользователей с видео: *{len(user_stats)}*\n"
+            text += "┌─ 📈 СТАТИСТИКА АКТИВНОСТИ ───────────┐\n"
+            text += f"│ 📊 Всего видео от пользователей: {total_videos}\n"
+            text += f"│ 📈 Среднее видео на пользователя: {avg_videos:.1f}\n"
+            text += f"│ 👥 Пользователей с видео: {len(user_stats)}\n"
             text += f"└─────────────────────────────────────────┘\n\n"
         else:
-            text += "┌─ 📊 *АКТИВНОСТЬ ПОЛЬЗОВАТЕЛЕЙ* ─────────┐\n"
+            text += "┌─ 📊 АКТИВНОСТЬ ПОЛЬЗОВАТЕЛЕЙ ─────────┐\n"
             text += f"│ 📹 Пока никто не отправлял видео\n"
             text += f"│ 💡 Отправьте видеосообщение для начала!\n"
             text += f"└─────────────────────────────────────────┘\n\n"
@@ -1155,7 +1155,7 @@ async def callback_user_stats(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1180,7 +1180,7 @@ async def callback_add_event(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1211,7 +1211,7 @@ async def callback_help(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
@@ -1246,7 +1246,7 @@ async def callback_settings(callback_query: types.CallbackQuery):
         await callback_query.message.edit_text(
             text=text,
             reply_markup=get_back_to_menu_keyboard(),
-            parse_mode="Markdown"
+            parse_mode=None
         )
         await callback_query.answer()
         
