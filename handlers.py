@@ -123,8 +123,11 @@ async def greet(message: types.Message):
 async def handle_video(message: types.Message):
     """Обрабатывает видеосообщения и сохраняет их в базу данных"""
     try:
+        logging.info(f"Video message received from user {message.from_user.id}")
         video = message.video
         user = message.from_user
+        
+        logging.info(f"Video details: file_id={video.file_id}, file_unique_id={video.file_unique_id}")
         
         # Сохраняем видеосообщение в базу данных
         success = save_video_message(
@@ -137,10 +140,39 @@ async def handle_video(message: types.Message):
         )
         
         if success:
-            logging.info(f"Video saved from user {user.id}: {video.file_id}")
+            logging.info(f"Video saved successfully from user {user.id}: {video.file_id}")
         else:
             logging.error(f"Failed to save video from user {user.id}: {video.file_id}")
             
     except Exception as e:
         logging.error(f"Error handling video: {e}")
         await message.reply("❌ Произошла ошибка при обработке видео")
+
+@router.message(lambda message: message.video_note is not None)
+async def handle_video_note(message: types.Message):
+    """Обрабатывает видеосообщения-кружочки и сохраняет их в базу данных"""
+    try:
+        logging.info(f"Video note received from user {message.from_user.id}")
+        video_note = message.video_note
+        user = message.from_user
+        
+        logging.info(f"Video note details: file_id={video_note.file_id}, file_unique_id={video_note.file_unique_id}")
+        
+        # Сохраняем видеосообщение в базу данных
+        success = save_video_message(
+            file_id=video_note.file_id,
+            file_unique_id=video_note.file_unique_id,
+            message_id=message.message_id,
+            user_id=user.id,
+            username=user.username or user.first_name,
+            caption="Видеосообщение-кружочек"
+        )
+        
+        if success:
+            logging.info(f"Video note saved successfully from user {user.id}: {video_note.file_id}")
+        else:
+            logging.error(f"Failed to save video note from user {user.id}: {video_note.file_id}")
+            
+    except Exception as e:
+        logging.error(f"Error handling video note: {e}")
+        await message.reply("❌ Произошла ошибка при обработке видеосообщения")
