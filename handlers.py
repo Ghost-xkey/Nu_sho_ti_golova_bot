@@ -494,6 +494,39 @@ async def cmd_debug_db(message: types.Message):
         logging.error(f"Error in debug_db command: {e}")
         await message.answer(f"❌ Ошибка диагностики: {e}")
 
+@router.message(Command(commands=["reset_db"]))
+async def cmd_reset_db(message: types.Message):
+    """Сбрасывает базу данных (для админов)"""
+    try:
+        # Проверяем, что это админ
+        admin_ids = [203593418]
+        
+        if message.from_user.id not in admin_ids:
+            await message.answer("❌ У вас нет прав для выполнения этой команды")
+            return
+        
+        import os
+        from config import DB_PATH
+        
+        # Удаляем файл базы данных если он существует
+        if DB_PATH != ':memory:' and os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+            await message.answer(f"✅ Файл базы данных удален: {DB_PATH}")
+        else:
+            await message.answer("ℹ️ База данных в памяти или файл не существует")
+        
+        # Пересоздаем таблицы
+        from db import create_tables
+        create_tables()
+        
+        await message.answer("✅ База данных сброшена и таблицы пересозданы!")
+        
+        logging.info(f"Database reset by user {message.from_user.id}")
+        
+    except Exception as e:
+        logging.error(f"Error in reset_db command: {e}")
+        await message.answer(f"❌ Ошибка сброса базы данных: {e}")
+
 @router.message(TextEqualsFilter(text="Привет"))
 async def greet(message: types.Message):
     try:
