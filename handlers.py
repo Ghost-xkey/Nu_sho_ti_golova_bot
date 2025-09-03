@@ -365,7 +365,7 @@ async def cmd_add_yearly_event(message: types.Message):
             from db import add_yearly_event
             logging.info(f"add_yearly_event function: {add_yearly_event}")
             
-            success = add_yearly_event(name, day, month, hour, minute, f"Поздравляем с {name.lower()}!")
+            success = add_yearly_event(name, day, month, hour, minute, f"{name}!")
             logging.info(f"Function call completed, result: {success}")
         except Exception as e:
             logging.error(f"Exception in add_yearly_event: {e}")
