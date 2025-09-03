@@ -27,8 +27,8 @@ scheduler.add_job(send_daily_message, "cron", hour=MEMORY_HOUR, minute=MEMORY_MI
 # Старое ежегодное сообщение (для совместимости)
 scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DAY, hour=YEARLY_HOUR, minute=YEARLY_MINUTE)
 
-# Проверка множественных ежегодных событий (каждую минуту)
-scheduler.add_job(check_and_send_yearly_events, "cron", minute="*")
+# Проверка множественных ежегодных событий (каждые 30 секунд для тестирования)
+scheduler.add_job(check_and_send_yearly_events, "interval", seconds=30)
 
 async def on_startup(dispatcher):
     logging.info("🚀 on_startup function called!")
