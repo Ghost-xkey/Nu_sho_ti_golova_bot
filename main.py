@@ -63,4 +63,16 @@ async def on_shutdown(dispatcher):
 
 if __name__ == "__main__":
     import asyncio
+    
+    # Запускаем планировщик вручную
+    logging.info("🚀 Starting scheduler manually...")
+    scheduler.start()
+    logging.info("✅ Scheduler started manually")
+    
+    # Проверим, что задачи добавлены
+    jobs = scheduler.get_jobs()
+    logging.info(f"Scheduler has {len(jobs)} jobs:")
+    for job in jobs:
+        logging.info(f"  - {job.name}: {job.trigger}")
+    
     asyncio.run(dp.start_polling(bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown))
