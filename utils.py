@@ -168,3 +168,10 @@ def check_and_send_yearly_events_sync():
         print(f"❌ SYNC Error checking yearly events: {e}")
         import traceback
         traceback.print_exc()
+
+# Создадим еще более простую версию для тестирования
+def simple_test_function():
+    """Простая тестовая функция"""
+    print("🔥 SIMPLE TEST FUNCTION CALLED!")
+    print("🔥 This should work!")
+    print("🔥 Current time:", datetime.datetime.now().strftime("%H:%M:%S"))
