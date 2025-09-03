@@ -30,6 +30,12 @@ scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DA
 # Проверка множественных ежегодных событий (каждые 30 секунд для тестирования)
 scheduler.add_job(check_and_send_yearly_events, "interval", seconds=30)
 
+# Тестовая функция для проверки планировщика (каждые 10 секунд)
+async def test_scheduler():
+    logging.info("🧪 Test scheduler function called!")
+
+scheduler.add_job(test_scheduler, "interval", seconds=10)
+
 async def on_startup(dispatcher):
     logging.info("🚀 on_startup function called!")
     try:
