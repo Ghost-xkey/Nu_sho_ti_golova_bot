@@ -178,6 +178,7 @@ async def cmd_test_yearly(message: types.Message):
         logging.info("Sending yearly message...")
         await send_yearly_message()
         logging.info("Yearly message sent successfully")
+        await message.answer("✅ Ежегодное сообщение отправлено в группу!")
             
     except Exception as e:
         logging.error(f"Error in test_yearly command: {e}")
