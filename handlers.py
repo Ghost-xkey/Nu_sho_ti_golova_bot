@@ -24,6 +24,11 @@ async def cmd_start(message: types.Message):
     try:
         logging.info(f"Start command received from user {message.from_user.id}")
         from kb import get_main_menu_keyboard
+        from db import save_user
+        
+        # Сохраняем пользователя в базу данных
+        user = message.from_user
+        save_user(user.id, user.username or user.first_name)
         
         text = "🎉 **ДОБРО ПОЖАЛОВАТЬ!** 🎉\n\n"
         text += "Это бот для управления ежегодными событиями и видеосообщениями!\n\n"
@@ -39,6 +44,11 @@ async def cmd_menu(message: types.Message):
     """Команда для открытия главного меню"""
     try:
         from kb import get_main_menu_keyboard
+        from db import save_user
+        
+        # Сохраняем пользователя в базу данных
+        user = message.from_user
+        save_user(user.id, user.username or user.first_name)
         
         text = "🎉 **ГЛАВНОЕ МЕНЮ** 🎉\n\n"
         text += "Выберите действие из меню ниже:"
@@ -753,6 +763,11 @@ async def callback_main_menu(callback_query: types.CallbackQuery):
     """Обработчик кнопки 'Главное меню'"""
     try:
         from kb import get_main_menu_keyboard
+        from db import save_user
+        
+        # Сохраняем пользователя в базу данных
+        user = callback_query.from_user
+        save_user(user.id, user.username or user.first_name)
         
         text = "🎉 **ДОБРО ПОЖАЛОВАТЬ В ГЛАВНОЕ МЕНЮ!** 🎉\n\n"
         text += "Выберите действие из меню ниже:"

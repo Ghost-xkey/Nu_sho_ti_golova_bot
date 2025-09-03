@@ -174,14 +174,39 @@ def get_user_stats():
     finally:
         conn.close()
 
+def save_user(user_id, username=None):
+    """Сохраняет пользователя в базу данных"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''INSERT OR IGNORE INTO users (id, username) VALUES (?, ?)''',
+                      (user_id, username))
+        conn.commit()
+        print(f"User saved: {user_id}, username: {username}")
+        return True
+    except Exception as e:
+        print(f"Error saving user: {e}")
+        return False
+    finally:
+        conn.close()
+
 def get_total_users():
     """Возвращает количество уникальных пользователей"""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        # Считаем пользователей из video_messages (кто отправлял видео)
         cursor.execute('SELECT COUNT(DISTINCT user_id) FROM video_messages')
-        result = cursor.fetchone()
-        return result[0] if result else 0
+        video_users = cursor.fetchone()
+        video_count = video_users[0] if video_users else 0
+        
+        # Также считаем пользователей из таблицы users (если она используется)
+        cursor.execute('SELECT COUNT(*) FROM users')
+        users_result = cursor.fetchone()
+        users_count = users_result[0] if users_result else 0
+        
+        # Возвращаем максимальное значение
+        return max(video_count, users_count)
     except Exception as e:
         print(f"Error getting total users: {e}")
         return 0
