@@ -1,11 +1,7 @@
 import sqlite3
 from config import DB_PATH
 
-# Создаем таблицы сразу при импорте модуля
-try:
-    create_tables()
-except Exception as e:
-    print(f"Error creating tables on import: {e}")
+# Таблицы будут созданы при запуске бота через on_startup
 
 def get_db_connection():
     import os
@@ -30,6 +26,7 @@ def get_db_connection():
 
 def create_tables():
     print("create_tables function called")
+    conn = None
     try:
         print("Getting database connection...")
         conn = get_db_connection()
@@ -88,7 +85,8 @@ def create_tables():
         import traceback
         traceback.print_exc()
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def save_video_message(file_id, file_unique_id, message_id, user_id, username, caption=None):
     """Сохраняет видеосообщение в базу данных"""
