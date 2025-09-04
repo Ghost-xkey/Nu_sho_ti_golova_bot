@@ -7,6 +7,12 @@ WORKDIR /app
 # Копируем файл зависимостей
 COPY requirements.txt .
 
+# Устанавливаем системные зависимости и ffmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
