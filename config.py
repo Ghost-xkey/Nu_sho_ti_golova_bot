@@ -1,6 +1,8 @@
-TOKEN = '7255987005:AAEMSy4B0zWvJcH5RoJas9o4pEYvPMA__0g'
-DB_PATH = '/app/data/bot_database.db'  # Файловая база данных в Docker volume
-CHAT_ID = '-1002512455884'
+import os
+
+TOKEN = os.getenv('TOKEN', '')
+DB_PATH = os.getenv('DB_PATH', '/app/data/bot_database.db')  # Файловая база данных в Docker volume
+CHAT_ID = os.getenv('CHAT_ID', '')
 
 # Настройки времени отправки воспоминаний
 MEMORY_HOUR = 9  # Час отправки (0-23)
@@ -33,10 +35,23 @@ def get_yearly_photo():
     return YEARLY_PHOTO_FILE_ID
 
 # Настройки AI-чата
-YANDEX_API_KEY = "YOUR_YANDEX_API_KEY_HERE"  # Замените на ваш API ключ
-YANDEX_FOLDER_ID = "YOUR_YANDEX_FOLDER_ID_HERE"  # Замените на ваш Folder ID
+YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")  # API ключ YandexGPT (не хранить в гите)
+YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID", "b1gr16qlpg0u8bo2h5eg")  # Folder ID проекта
 
 # Настройки AI поведения
 AI_ENABLED = True  # Включен ли AI-чат
 AI_RESPONSE_CHANCE = 0.1  # Вероятность случайного ответа (10%)
 AI_MAX_RESPONSES_PER_HOUR = 20  # Максимум ответов в час
+
+# Настройки голосовых сообщений
+VOICE_ENABLED = True  # Включены ли голосовые сообщения
+VOICE_LANGUAGE = "ru-RU"  # Язык для распознавания и синтеза речи
+VOICE_GENDER = "male"  # Пол голоса (male/female)
+VOICE_EMOTION = "evil"  # Эмоция голоса (neutral, good, evil, mixed)
+VOICE_SPEED = "1.0"  # Скорость речи (0.1-3.0)
+VOICE_FORMAT = "oggopus"  # Формат аудио (oggopus, mp3, wav, lpcm)
+VOICE_NAME = "zahar"  # Имя конкретного голоса (например: "zahar", "ermil", "alena"). Если указано, перекрывает VOICE_GENDER
+
+# Настройки лексики
+ALLOW_PROFANITY = True  # Разрешать крепкую лексику (без хейта/дискриминации/угроз)
+PROFANITY_LEVEL = "hard"  # Уровень: mild | medium | hard

@@ -1,11 +1,10 @@
 from aiogram import Router, types
-from aiogram.types import BufferedInputFile
 from aiogram.filters import BaseFilter, CommandStart, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
 from kb import main_keyboard
 from db import save_video_message, get_video_count, get_user_stats, get_total_users
 from ai_chat import yandex_ai
-from config import AI_ENABLED, VOICE_ENABLED, ALLOW_PROFANITY, PROFANITY_LEVEL
+from config import AI_ENABLED, VOICE_ENABLED
 import logging
 import speech_kit
 
@@ -920,8 +919,7 @@ async def callback_confirm_delete(callback_query: types.CallbackQuery):
     try:
         event_id = int(callback_query.data.split("_")[2])
         from db import delete_yearly_event
-        from kb import get_back_to_menu_keyboard, get_profanity_settings_keyboard
-        import config
+        from kb import get_back_to_menu_keyboard
         
         success = delete_yearly_event(event_id)
         
@@ -1228,8 +1226,7 @@ async def callback_help(callback_query: types.CallbackQuery):
 async def callback_settings(callback_query: types.CallbackQuery):
     """Обработчик кнопки 'Настройки'"""
     try:
-        from kb import get_back_to_menu_keyboard, get_profanity_settings_keyboard
-        import config
+        from kb import get_back_to_menu_keyboard
         
         text = "⚙️ **НАСТРОЙКИ** ⚙️\n\n"
         text += "**Доступные настройки:**\n\n"
@@ -1245,19 +1242,13 @@ async def callback_settings(callback_query: types.CallbackQuery):
         text += "📊 **База данных:**\n"
         text += "• Статус: ✅ Активна\n"
         text += "• Путь: `/tmp/bot_database.db`\n\n"
-        text += "🧩 **Лексика:**\n"
-        text += f"• Мат: {'🟢 Включён' if getattr(config,'ALLOW_PROFANITY', False) else '⚪ Выключен'}\n"
-        text += f"• Уровень: {getattr(config,'PROFANITY_LEVEL','mild')}\n\n"
         text += "💡 **Для изменения настроек используйте команды:**\n"
         text += "• `/init_db` - пересоздать БД\n"
         text += "• `/reset_db` - сбросить БД"
         
         await callback_query.message.edit_text(
             text=text,
-            reply_markup=get_profanity_settings_keyboard(
-                enabled=getattr(config,'ALLOW_PROFANITY', False),
-                level=getattr(config,'PROFANITY_LEVEL','mild')
-            ),
+            reply_markup=get_back_to_menu_keyboard(),
             parse_mode=None
         )
         await callback_query.answer()
@@ -1265,50 +1256,6 @@ async def callback_settings(callback_query: types.CallbackQuery):
     except Exception as e:
         logging.error(f"Error in settings callback: {e}")
         await callback_query.answer("❌ Ошибка при открытии настроек")
-
-@router.callback_query(lambda c: c.data in {"profanity_toggle","profanity_level_mild","profanity_level_medium","profanity_level_hard"})
-async def callback_profanity_controls(callback_query: types.CallbackQuery):
-    try:
-        import config
-        action = callback_query.data
-        if action == "profanity_toggle":
-            setattr(config, "ALLOW_PROFANITY", not getattr(config, "ALLOW_PROFANITY", False))
-        elif action.startswith("profanity_level_"):
-            level = action.split("_")[-1]
-            setattr(config, "PROFANITY_LEVEL", level)
-
-        # Обновляем экран настроек
-        from kb import get_profanity_settings_keyboard
-        text = "⚙️ **НАСТРОЙКИ** ⚙️\n\n"
-        text += "**Доступные настройки:**\n\n"
-        text += "🕐 **Время напоминаний:**\n"
-        text += "• Ежедневные воспоминания: 09:00\n"
-        text += "• Ежегодные события: по расписанию\n\n"
-        text += "🎵 **Медиа настройки:**\n"
-        text += "• Автосохранение видео: ✅\n"
-        text += "• Поддержка картинок: ✅\n"
-        text += "• Поддержка музыки: ✅\n\n"
-        text += "🌍 **Часовой пояс:**\n"
-        text += "• Текущий: Москва (UTC+3)\n\n"
-        text += "📊 **База данных:**\n"
-        text += "• Статус: ✅ Активна\n"
-        text += "• Путь: `/tmp/bot_database.db`\n\n"
-        text += "🧩 **Лексика:**\n"
-        text += f"• Мат: {'🟢 Включён' if getattr(config,'ALLOW_PROFANITY', False) else '⚪ Выключен'}\n"
-        text += f"• Уровень: {getattr(config,'PROFANITY_LEVEL','mild')}\n\n"
-
-        await callback_query.message.edit_text(
-            text=text,
-            reply_markup=get_profanity_settings_keyboard(
-                enabled=getattr(config,'ALLOW_PROFANITY', False),
-                level=getattr(config,'PROFANITY_LEVEL','mild')
-            ),
-            parse_mode=None
-        )
-        await callback_query.answer()
-    except Exception as e:
-        logging.error(f"Error in profanity controls: {e}")
-        await callback_query.answer("❌ Ошибка при изменении лексики")
 
 # AI-чат обработчик голосовых сообщений
 @router.message(lambda message: message.voice is not None)
@@ -1354,7 +1301,7 @@ async def handle_voice_message(message: types.Message):
                 if voice_response:
                     # Отправляем голосовой ответ
                     await message.answer_voice(
-                        voice=BufferedInputFile(voice_response, filename="voice.ogg"),
+                        voice=voice_response,
                         caption=f"🎤 {ai_response[:100]}{'...' if len(ai_response) > 100 else ''}"
                     )
                     logging.info(f"AI voice response sent: {ai_response[:50]}...")
@@ -1368,9 +1315,7 @@ async def handle_voice_message(message: types.Message):
                 voice_fallback = speech_kit.text_to_voice(fallback_response)
                 
                 if voice_fallback:
-                    await message.answer_voice(
-                        voice=BufferedInputFile(voice_fallback, filename="voice.ogg")
-                    )
+                    await message.answer_voice(voice=voice_fallback)
                 else:
                     await message.answer(fallback_response)
                     
@@ -1420,42 +1365,6 @@ async def handle_ai_message(message: types.Message):
     except Exception as e:
         logging.error(f"Error in AI message handler: {e}")
         # Не отправляем ошибку пользователю, чтобы не спамить
-
-# Админ-команды для мата
-@router.message(Command("mat_on"))
-async def cmd_mat_on(message: types.Message):
-    try:
-        import config
-        setattr(config, "ALLOW_PROFANITY", True)
-        await message.answer("🟢 Жёсткий режим лексики включён")
-    except Exception as e:
-        logging.error(f"Error toggling profanity on: {e}")
-
-@router.message(Command("mat_off"))
-async def cmd_mat_off(message: types.Message):
-    try:
-        import config
-        setattr(config, "ALLOW_PROFANITY", False)
-        await message.answer("⚪ Жёсткий режим лексики выключен")
-    except Exception as e:
-        logging.error(f"Error toggling profanity off: {e}")
-
-@router.message(Command("mat_level"))
-async def cmd_mat_level(message: types.Message):
-    try:
-        args = (message.text or "").strip().split()
-        if len(args) < 2:
-            await message.answer("Укажи уровень: /mat_level mild|medium|hard")
-            return
-        level = args[1].lower()
-        if level not in {"mild","medium","hard"}:
-            await message.answer("Недопустимый уровень. Доступно: mild, medium, hard")
-            return
-        import config
-        setattr(config, "PROFANITY_LEVEL", level)
-        await message.answer(f"🔧 Уровень жёсткости: {level}")
-    except Exception as e:
-        logging.error(f"Error setting profanity level: {e}")
 
 # Команды для управления AI
 @router.message(Command("ai_on"))

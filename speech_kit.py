@@ -6,7 +6,7 @@ import base64
 from config import (
     YANDEX_API_KEY, YANDEX_FOLDER_ID, 
     VOICE_ENABLED, VOICE_LANGUAGE, VOICE_GENDER, 
-    VOICE_EMOTION, VOICE_SPEED, VOICE_FORMAT
+    VOICE_EMOTION, VOICE_SPEED, VOICE_FORMAT, VOICE_NAME
 )
 
 class YandexSpeechKit:
@@ -18,88 +18,83 @@ class YandexSpeechKit:
         
     def get_headers(self):
         return {
-            "Authorization": f"Api-Key {self.api_key}",
-            "Content-Type": "application/json"
+            "Authorization": f"Api-Key {self.api_key}"
         }
     
     def voice_to_text(self, voice_data: bytes) -> str:
         """
-        Преобразует голосовое сообщение в текст
+        Преобразует голосовое сообщение в текст (сырое бинарное OGG/OPUS)
+        Отправляем бинарные данные напрямую с query-параметрами, как в официальных примерах.
         """
         try:
             if not VOICE_ENABLED:
                 logging.warning("Voice processing is disabled")
                 return ""
-            
-            # Пробуем разные форматы аудио
-            audio_formats = [
-                {
-                    "audioEncoding": "OGG_OPUS",
-                    "sampleRateHertz": 48000,
-                    "data": voice_data
-                },
-                {
-                    "audioEncoding": "LINEAR16_PCM", 
-                    "sampleRateHertz": 16000,
-                    "data": voice_data
-                },
-                {
-                    "audioEncoding": "MP3",
-                    "sampleRateHertz": 44100,
-                    "data": voice_data
-                }
-            ]
-            
-            for audio_format in audio_formats:
+
+            # Формируем параметры запроса согласно API: https://stt.api.cloud.yandex.net/speech/v1/stt:recognize
+            params = {
+                "lang": VOICE_LANGUAGE,          # например, ru-RU
+                "folderId": self.folder_id,
+                "format": "oggopus",           # формат телеграм-голосовых
+                "profanityFilter": "false"
+            }
+
+            # Для бинарной загрузки НЕ указываем Content-Type: application/json
+            headers = {
+                "Authorization": f"Api-Key {self.api_key}"
+            }
+
+            response = requests.post(
+                self.stt_url,
+                headers=headers,
+                params=params,
+                data=voice_data,   # сырое бинарное содержимое файла
+                timeout=15
+            )
+
+            if response.status_code == 200:
                 try:
-                    # Кодируем аудио в base64
-                    audio_base64 = base64.b64encode(audio_format["data"]).decode('utf-8')
-                    
-                    # Подготавливаем данные для API
-                    data = {
-                        "config": {
-                            "specification": {
-                                "languageCode": VOICE_LANGUAGE,
-                                "model": "general",
-                                "profanityFilter": False,
-                                "audioEncoding": audio_format["audioEncoding"],
-                                "sampleRateHertz": audio_format["sampleRateHertz"]
-                            }
-                        },
-                        "audio": {
-                            "content": audio_base64
-                        }
-                    }
-                    
-                    # Отправляем запрос к Speech-to-Text API
-                    response = requests.post(
-                        self.stt_url,
-                        headers=self.get_headers(),
-                        json=data,
-                        timeout=10
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        if "result" in result and "alternatives" in result["result"]:
-                            text = result["result"]["alternatives"][0]["text"]
-                            logging.info(f"Voice-to-text successful with {audio_format['audioEncoding']}: {text[:50]}...")
-                            return text
-                        else:
-                            logging.warning(f"No text found with {audio_format['audioEncoding']}")
-                            continue
-                    else:
-                        logging.warning(f"Speech-to-Text API error with {audio_format['audioEncoding']}: {response.status_code} - {response.text}")
-                        continue
-                        
-                except Exception as format_error:
-                    logging.warning(f"Error with {audio_format['audioEncoding']}: {format_error}")
-                    continue
-            
-            # Если ни один формат не сработал
-            logging.error("All audio formats failed for voice recognition")
-            return ""
-                
+                    result = response.json()
+                except Exception as e:
+                    logging.error(f"STT invalid JSON: {e} - {response.text[:200]}")
+                    return ""
+
+                # Обработка ошибок в теле ответа
+                if isinstance(result, dict) and ("error_code" in result or "error_message" in result):
+                    logging.error(f"STT error payload: {result}")
+                    return ""
+
+                # Универсальный парсинг текста
+                recognized_text = ""
+                if isinstance(result, dict):
+                    if "result" in result:
+                        res = result["result"]
+                        if isinstance(res, dict):
+                            # Формат: {"result": {"alternatives": [{"text": "..."}]}}
+                            alternatives = res.get("alternatives")
+                            if isinstance(alternatives, list) and len(alternatives) > 0:
+                                first_alt = alternatives[0] or {}
+                                recognized_text = (first_alt.get("text") or "").strip()
+                            else:
+                                # Иногда текст может быть напрямую в поле text
+                                recognized_text = (res.get("text") or "").strip()
+                        elif isinstance(res, str):
+                            # Формат: {"result": "..."}
+                            recognized_text = res.strip()
+                    elif "text" in result and isinstance(result["text"], str):
+                        # Формат: {"text": "..."}
+                        recognized_text = result["text"].strip()
+
+                if recognized_text:
+                    logging.info(f"Voice-to-text OK: {recognized_text[:50]}...")
+                    return recognized_text
+
+                logging.warning("No text found in voice recognition result")
+                return ""
+            else:
+                logging.error(f"STT API error: {response.status_code} - {response.text}")
+                return ""
+
         except Exception as e:
             logging.error(f"Error converting voice to text: {e}")
             return ""
@@ -113,33 +108,46 @@ class YandexSpeechKit:
                 logging.warning("Voice processing is disabled")
                 return b""
                 
-            # Выбираем голос в зависимости от настроек
-            voice_name = "filipp" if VOICE_GENDER == "male" else "jane"
+            # Выбираем имя голоса: приоритет VOICE_NAME, иначе по полу
+            if VOICE_NAME and isinstance(VOICE_NAME, str) and VOICE_NAME.strip():
+                voice_name = VOICE_NAME.strip()
+            else:
+                voice_name = "filipp" if VOICE_GENDER == "male" else "jane"
             
-            # Подготавливаем данные для API
+            # Подготавливаем данные для API (urlencoded form)
             data = {
                 "text": text,
                 "lang": VOICE_LANGUAGE,
                 "voice": voice_name,
-                "emotion": "evil",  # Грубая эмоция
                 "speed": VOICE_SPEED,
-                "format": VOICE_FORMAT
+                "format": VOICE_FORMAT,
+                "folderId": self.folder_id
             }
-            
+
+            # Эмоция поддерживается не всеми голосами. Добавляем только если безопасно.
+            safe_emotion_voices = {"jane", "filipp"}
+            if VOICE_EMOTION and VOICE_EMOTION != "neutral" and voice_name in safe_emotion_voices:
+                data["emotion"] = VOICE_EMOTION
+
+            headers = {
+                "Authorization": f"Api-Key {self.api_key}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+
             # Отправляем запрос к Text-to-Speech API
             response = requests.post(
                 self.tts_url,
-                headers=self.get_headers(),
+                headers=headers,
                 data=data,
                 timeout=10
             )
             
             if response.status_code == 200:
                 audio_data = response.content
-                logging.info(f"Text-to-voice successful for: {text[:50]}...")
+                logging.info(f"TTS OK: {text[:50]}...")
                 return audio_data
             else:
-                logging.error(f"Text-to-Speech API error: {response.status_code} - {response.text}")
+                logging.error(f"TTS API error: {response.status_code} - {response.text}")
                 return b""
                 
         except Exception as e:

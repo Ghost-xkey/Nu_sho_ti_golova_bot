@@ -161,3 +161,32 @@ def get_statistics_keyboard():
     builder.adjust(2, 2, 1)
     
     return builder.as_markup()
+
+def get_profanity_settings_keyboard(enabled: bool, level: str):
+    """Клавиатура управления 'жёстким режимом'"""
+    builder = InlineKeyboardBuilder()
+
+    # Кнопка переключения
+    toggle_text = "🟢 Мат: Вкл" if enabled else "⚪ Мат: Выкл"
+    builder.add(InlineKeyboardButton(
+        text=toggle_text,
+        callback_data="profanity_toggle"
+    ))
+
+    # Кнопки уровней
+    lvl = (level or "").lower()
+    def label(name: str) -> str:
+        return f"✅ {name}" if lvl == name else name
+
+    builder.add(InlineKeyboardButton(text=label("mild"), callback_data="profanity_level_mild"))
+    builder.add(InlineKeyboardButton(text=label("medium"), callback_data="profanity_level_medium"))
+    builder.add(InlineKeyboardButton(text=label("hard"), callback_data="profanity_level_hard"))
+
+    # Назад в меню
+    builder.add(InlineKeyboardButton(
+        text="🔙 Главное меню",
+        callback_data="main_menu"
+    ))
+
+    builder.adjust(1, 3, 1)
+    return builder.as_markup()
