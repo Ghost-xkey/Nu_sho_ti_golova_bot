@@ -69,28 +69,36 @@ class YandexGPT:
     
     def get_users_info(self, chat_id: str) -> str:
         """
-        Получает информацию о всех пользователях чата
+        Получает один случайный факт об участниках чата для персонализации ответов
         """
         try:
             from db import get_all_users
+            import random
             
             users = get_all_users()
             if not users:
                 return ""
             
-            users_info = "Информация об участниках чата:\n"
-            for user in users:
-                username = f"@{user['username']}" if user['username'] else "без username"
-                nickname = user['nickname'] or "никнейм не указан"
-                description = user['description'] or "описание не указано"
-                traits = user['traits'] or "черты не указаны"
-                jokes_about = user['jokes_about'] or "шутки не указаны"
-                
-                users_info += f"- {username} ({nickname}): {description}\n"
-                users_info += f"  Черты: {traits}\n"
-                users_info += f"  Шутки про него: {jokes_about}\n\n"
+            # Выбираем случайного пользователя
+            user = random.choice(users)
             
-            return users_info
+            username = f"@{user['username']}" if user['username'] else "без username"
+            nickname = user['nickname'] or "никнейм не указан"
+            description = user['description'] or "описание не указано"
+            traits = user['traits'] or "черты не указаны"
+            jokes_about = user['jokes_about'] or "шутки не указаны"
+            
+            # Выбираем один случайный факт из доступных
+            facts = [
+                f"{username} ({nickname}) - {description}",
+                f"{nickname} известен тем, что: {traits}",
+                f"Про {nickname} можно пошутить: {jokes_about}"
+            ]
+            
+            # Случайно выбираем один факт
+            selected_fact = random.choice(facts)
+            
+            return f"Информация об участнике чата: {selected_fact}"
             
         except Exception as e:
             logging.error(f"Error getting users info: {e}")
