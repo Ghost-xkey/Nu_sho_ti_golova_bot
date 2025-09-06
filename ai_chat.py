@@ -253,7 +253,7 @@ class YandexGPT:
             
             # Проверяем на короткие и неинформативные сообщения
             # Исключаем простые вызовы по имени из фильтра коротких сообщений
-            is_short_message = (message_text.strip() in short_messages and not is_simple_name_call) or len(message_text.strip()) <= 3
+            is_short_message = (message_text.strip() in short_messages and not is_simple_name_call) or (len(message_text.strip()) <= 3 and not is_simple_name_call)
             is_meaningless = any(pattern in message_lower for pattern in meaningless_patterns)
             is_emoji_only = len(message_text.strip()) <= 2 and any(char in "👍🤔😊😢😭😡😎🔥💯" for char in message_text)
             is_simple_response = is_short_message or is_meaningless or is_emoji_only
