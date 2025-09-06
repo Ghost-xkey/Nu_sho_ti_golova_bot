@@ -1364,7 +1364,10 @@ async def handle_voice_message(message: types.Message):
                     logging.info(f"AI text response sent (voice failed): {ai_response[:50]}...")
             else:
                 # Fallback ответ
-                fallback_response = yandex_ai.get_random_comment()
+                text_lower = text_from_voice.lower()
+                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно"]
+                is_profanity_request = any(trigger in text_lower for trigger in profanity_triggers)
+                fallback_response = yandex_ai.get_random_comment(is_profanity_request)
                 voice_fallback = speech_kit.text_to_voice(fallback_response)
                 
                 if voice_fallback:
@@ -1413,7 +1416,10 @@ async def handle_ai_message(message: types.Message):
                 logging.info(f"AI response sent: {ai_response[:50]}...")
             else:
                 # Fallback - случайный комментарий
-                fallback_response = yandex_ai.get_random_comment()
+                message_lower = message.text.lower()
+                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно"]
+                is_profanity_request = any(trigger in message_lower for trigger in profanity_triggers)
+                fallback_response = yandex_ai.get_random_comment(is_profanity_request)
                 await message.reply(fallback_response)
                 logging.info(f"AI fallback response sent: {fallback_response}")
                 
