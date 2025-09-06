@@ -104,6 +104,24 @@ class YandexGPT:
             logging.error(f"Error getting users info: {e}")
             return ""
     
+    def get_recent_bot_messages(self, chat_id: str, limit: int = 3) -> list:
+        """Получает последние сообщения бота для определения продолжения диалога"""
+        try:
+            from db import get_chat_history
+            history = get_chat_history(chat_id, limit=limit * 2)  # Берем больше, чтобы найти сообщения бота
+            
+            bot_messages = []
+            for message in history:
+                if message.get('is_bot', False):
+                    bot_messages.append(message)
+                    if len(bot_messages) >= limit:
+                        break
+            
+            return bot_messages
+        except Exception as e:
+            logging.error(f"Error getting recent bot messages: {e}")
+            return []
+    
     def add_to_history(self, chat_id: str, message: str):
         """
         Добавляет сообщение в историю чата
@@ -179,8 +197,19 @@ class YandexGPT:
             # Определяем нужна ли поддержка или дружеское участие
             should_engage = needs_support or wants_conversation or is_detailed_message
             
+            # Проверяем, отвечал ли бот в последних сообщениях (для продолжения диалога)
+            recent_bot_messages = self.get_recent_bot_messages(chat_id, limit=3)
+            is_continuing_conversation = len(recent_bot_messages) > 0
+            
             # Вероятность включения в разговор (30% для поддержки, 20% для общения, 10% для детальных сообщений)
-            engagement_probability = 0.3 if needs_support else 0.2 if wants_conversation else 0.1
+            base_engagement_probability = 0.3 if needs_support else 0.2 if wants_conversation else 0.1
+            
+            # Если бот недавно отвечал - увеличиваем вероятность продолжения диалога
+            if is_continuing_conversation:
+                engagement_probability = min(0.8, base_engagement_probability * 2.5)  # Увеличиваем в 2.5 раза, но не больше 80%
+            else:
+                engagement_probability = base_engagement_probability
+                
             should_auto_respond = should_engage and random.random() < engagement_probability
             
             # Проверяем триггеры для мемов
@@ -224,6 +253,14 @@ class YandexGPT:
             # Случайные мемы (5% вероятность на обычные сообщения)
             if not is_meme_request and random.random() < 0.05:
                 is_meme_request = True
+            
+            # Дополнительная логика: продолжаем диалог если бот недавно отвечал
+            if not should_auto_respond and not is_meme_request and is_continuing_conversation:
+                # Если бот недавно отвечал, увеличиваем вероятность включения в обычные сообщения
+                continue_probability = 0.4  # 40% вероятность продолжить диалог
+                if random.random() < continue_probability:
+                    should_auto_respond = True
+                    response_type = "continue_conversation"
             
             # Дополнительная логика: иногда включаемся в обычные разговоры (5% вероятность)
             if not should_auto_respond and not is_meme_request and random.random() < 0.05:
@@ -282,6 +319,13 @@ class YandexGPT:
 - Не навязывайся, но будь полезным
 - Поддержи разговор или дай полезный комментарий
 - Оставайся в своем характере, но будь чутким к настроению чата"""
+            elif response_type == "continue_conversation":
+                context_prompt = """
+Ты продолжаешь диалог! Будь естественным:
+- Ты уже включился в разговор, так что продолжай его
+- Отвечай на то, что человек написал
+- Поддерживай диалог, задавай уточняющие вопросы если нужно
+- Оставайся в своем характере, но будь вовлеченным"""
             elif response_type == "casual_engagement":
                 context_prompt = """
 Ты решил просто поучаствовать в разговоре! Будь естественным:
