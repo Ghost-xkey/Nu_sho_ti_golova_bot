@@ -136,6 +136,10 @@ class YandexGPT:
             profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно"]
             is_profanity_request = any(trigger in message_lower for trigger in profanity_triggers)
             
+            # Проверяем триггеры для мемов
+            meme_triggers = ["мем", "картинка", "фото", "изображение", "мемчик", "мемас"]
+            is_meme_request = any(trigger in message_lower for trigger in meme_triggers)
+            
             # Формируем промпт
             profanity_clause = "Умеренная крепкая лексика допустима, без оскорблений по признакам, угроз и явного NSFW." if ALLOW_PROFANITY else "Без мата."
             if ALLOW_PROFANITY and PROFANITY_LEVEL == "hard":
@@ -279,6 +283,17 @@ class YandexGPT:
                 
                 # Добавляем ответ в историю
                 self.add_to_history(chat_id, f"AI: {ai_response}")
+                
+                # Если это запрос на мем - генерируем мем
+                if is_meme_request:
+                    try:
+                        from meme_generator import meme_generator
+                        meme_url = meme_generator.create_context_meme(message_text, users_info)
+                        if meme_url:
+                            # Возвращаем специальный ответ с URL мема
+                            return f"MEME:{meme_url}:{ai_response}"
+                    except Exception as e:
+                        logging.error(f"Error generating meme: {e}")
                 
                 return ai_response
             else:

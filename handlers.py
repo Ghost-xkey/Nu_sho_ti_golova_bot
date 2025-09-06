@@ -1411,9 +1411,34 @@ async def handle_ai_message(message: types.Message):
             ai_response = yandex_ai.generate_response(message.text, chat_id, username)
             
             if ai_response:
-                # Отправляем ответ
-                await message.reply(ai_response)
-                logging.info(f"AI response sent: {ai_response[:50]}...")
+                # Проверяем, содержит ли ответ мем
+                if ai_response.startswith("MEME:"):
+                    # Парсим ответ с мемом
+                    parts = ai_response.split(":", 2)
+                    if len(parts) >= 3:
+                        meme_url = parts[1]
+                        text_response = parts[2]
+                        
+                        # Отправляем мем
+                        try:
+                            import requests
+                            meme_response = requests.get(meme_url)
+                            if meme_response.status_code == 200:
+                                meme_file = BufferedInputFile(meme_response.content, filename="meme.jpg")
+                                await message.reply_photo(meme_file, caption=text_response)
+                                logging.info(f"Meme sent with caption: {text_response[:50]}...")
+                            else:
+                                # Если не удалось загрузить мем, отправляем только текст
+                                await message.reply(text_response)
+                                logging.info(f"AI response sent (meme failed): {text_response[:50]}...")
+                        except Exception as e:
+                            # Если ошибка с мемом, отправляем только текст
+                            await message.reply(text_response)
+                            logging.error(f"Error sending meme: {e}")
+                else:
+                    # Обычный текстовый ответ
+                    await message.reply(ai_response)
+                    logging.info(f"AI response sent: {ai_response[:50]}...")
             else:
                 # Fallback - случайный комментарий
                 message_lower = message.text.lower()
