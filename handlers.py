@@ -1421,16 +1421,30 @@ async def handle_ai_message(message: types.Message):
                         
                         # Отправляем мем
                         try:
+                            import base64
                             import requests
-                            meme_response = requests.get(meme_url)
-                            if meme_response.status_code == 200:
-                                meme_file = BufferedInputFile(meme_response.content, filename="meme.jpg")
-                                await message.reply_photo(meme_file, caption=text_response)
-                                logging.info(f"Meme sent with caption: {text_response[:50]}...")
+                            
+                            # Проверяем, это URL или base64
+                            if meme_url.startswith('http'):
+                                # Обычный URL мема (Imgflip)
+                                meme_response = requests.get(meme_url)
+                                if meme_response.status_code == 200:
+                                    meme_file = BufferedInputFile(meme_response.content, filename="meme.jpg")
+                                    await message.reply_photo(meme_file, caption=text_response)
+                                    logging.info(f"Meme sent with caption: {text_response[:50]}...")
+                                else:
+                                    await message.reply(text_response)
+                                    logging.info(f"AI response sent (meme failed): {text_response[:50]}...")
                             else:
-                                # Если не удалось загрузить мем, отправляем только текст
-                                await message.reply(text_response)
-                                logging.info(f"AI response sent (meme failed): {text_response[:50]}...")
+                                # Base64 изображение (Craiyon)
+                                try:
+                                    meme_data = base64.b64decode(meme_url)
+                                    meme_file = BufferedInputFile(meme_data, filename="meme.jpg")
+                                    await message.reply_photo(meme_file, caption=text_response)
+                                    logging.info(f"AI-generated meme sent with caption: {text_response[:50]}...")
+                                except Exception as decode_error:
+                                    await message.reply(text_response)
+                                    logging.error(f"Error decoding base64 meme: {decode_error}")
                         except Exception as e:
                             # Если ошибка с мемом, отправляем только текст
                             await message.reply(text_response)
