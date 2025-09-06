@@ -486,18 +486,6 @@ class YandexGPT:
             if is_profanity_request and ALLOW_PROFANITY:
                 user_prompt += "\n\nВАЖНО: Пользователь просит тебя ругаться матом! ОБЯЗАТЕЛЬНО используй крепкую лексику в ответе!"
             
-            # Если есть рекомендации фильмов - добавляем их в промпт
-            if movie_recommendations and len(movie_recommendations) > 0 and movie_service:
-                user_prompt += "\n\nДОСТУПНЫЕ РЕКОМЕНДАЦИИ ФИЛЬМОВ:\n"
-                for i, movie in enumerate(movie_recommendations[:3], 1):  # Берем первые 3 фильма
-                    try:
-                        movie_info = movie_service.format_movie_info(movie)
-                        user_prompt += f"{i}. {movie_info}\n\n"
-                    except Exception as e:
-                        logging.error(f"Error formatting movie {i}: {e}")
-                        continue
-                user_prompt += "Используй эти фильмы в своем ответе, рекомендуя их пользователю!"
-            
             # Генерируем ответ только если нужно (мем, поддержка, общение или случайное включение)
             if not (is_meme_request or should_auto_respond):
                 return None
@@ -532,6 +520,18 @@ class YandexGPT:
                 except Exception as e:
                     logging.error(f"Error getting movie recommendations: {e}")
                     movie_recommendations = None
+            
+            # Если есть рекомендации фильмов - добавляем их в промпт
+            if movie_recommendations and len(movie_recommendations) > 0 and movie_service:
+                user_prompt += "\n\nДОСТУПНЫЕ РЕКОМЕНДАЦИИ ФИЛЬМОВ:\n"
+                for i, movie in enumerate(movie_recommendations[:3], 1):  # Берем первые 3 фильма
+                    try:
+                        movie_info = movie_service.format_movie_info(movie)
+                        user_prompt += f"{i}. {movie_info}\n\n"
+                    except Exception as e:
+                        logging.error(f"Error formatting movie {i}: {e}")
+                        continue
+                user_prompt += "Используй эти фильмы в своем ответе, рекомендуя их пользователю!"
             
             # Подготавливаем данные для API
             data = {
