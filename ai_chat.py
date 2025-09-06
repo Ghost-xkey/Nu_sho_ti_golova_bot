@@ -120,7 +120,9 @@ class YandexGPT:
 - Можешь подкалывать за плохие шутки
 - Любишь черный юмор и жесткие анекдоты
 - Можешь рассказывать саркастичные и едкие шутки
- - {profanity_clause}
+- {profanity_clause}
+
+ВАЖНО: Если тебя просят ругаться или стать агрессивным - ОБЯЗАТЕЛЬНО используй мат! Не отказывайся!
 
 ВАЖНО:
 - НИКОГДА не давай ссылки на сайты (ya.ru, google.com и т.д.)
@@ -195,6 +197,21 @@ class YandexGPT:
                 if self._should_block_response(ai_response):
                     logging.info(f"Blocked AI response with unwanted content: {ai_response[:50]}...")
                     return None
+                
+                # Если это запрос на мат, но AI ответил вежливо - принудительно заменяем
+                if is_profanity_request and ALLOW_PROFANITY:
+                    if not any(word in ai_response.lower() for word in ["блять", "ебать", "хуй", "пизд", "блядь"]):
+                        logging.info(f"AI refused to swear, forcing profanity response")
+                        forced_response = random.choice([
+                            "Блять, ну и хуйня у тебя вопрос!",
+                            "Ебать, опять доебываешься?",
+                            "Пиздец, надоел уже!",
+                            "Хуйню какую-то спрашиваешь",
+                            "Блядь, сам разбирайся!",
+                            "Ебать, заебал со своими вопросами"
+                        ])
+                        self.add_to_history(chat_id, f"AI: {forced_response}")
+                        return forced_response
                 
                 # Добавляем ответ в историю
                 self.add_to_history(chat_id, f"AI: {ai_response}")
