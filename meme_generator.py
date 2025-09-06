@@ -7,8 +7,8 @@ class MemeGenerator:
     def __init__(self):
         # Imgflip API credentials (можно получить на https://imgflip.com/api)
         self.api_url = "https://api.imgflip.com"
-        self.username = "your_username"  # Замени на свой
-        self.password = "your_password"  # Замени на свой
+        self.username = "moskva2255@mail.ru"
+        self.password = "%hQ$c5*6x.m5G3s"
         
         # Популярные мем-шаблоны с их ID
         self.meme_templates = {
