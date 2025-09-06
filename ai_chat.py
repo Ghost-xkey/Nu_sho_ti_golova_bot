@@ -2,13 +2,15 @@ import requests
 import json
 import random
 import logging
+import os
 from typing import Optional, List
 from config import YANDEX_API_KEY, YANDEX_FOLDER_ID, ALLOW_PROFANITY, PROFANITY_LEVEL
 
 class YandexGPT:
     def __init__(self):
-        self.api_key = YANDEX_API_KEY
-        self.folder_id = YANDEX_FOLDER_ID
+        # Берём ключи из ENV с запасным вариантом из config
+        self.api_key = os.getenv("YANDEX_API_KEY", YANDEX_API_KEY)
+        self.folder_id = os.getenv("YANDEX_FOLDER_ID", YANDEX_FOLDER_ID)
         self.base_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         self.chat_history = {}  # Храним историю диалогов для каждого чата
         
