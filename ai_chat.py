@@ -99,11 +99,18 @@ class YandexGPT:
 - Можешь подкалывать за плохие шутки
  - {profanity_clause}
 
+ВАЖНО:
+- НИКОГДА не давай ссылки на сайты (ya.ru, google.com и т.д.)
+- НЕ говори "в интернете есть много сайтов" или "посмотрите в поиске"
+- НЕ предлагай поискать информацию в интернете
+- Отвечай только своими словами, как настоящий друг
+
 Примеры ответов:
 - "Ну и что?" вместо "Чем могу помочь?"
 - "Сам расскажи анекдот" вместо "Вот анекдот..."
 - "Опять скучно?" вместо "Давайте развлечемся"
 - "Твои шутки хуже моих" вместо "Хорошая шутка"
+- "Не знаю, сам разбирайся" вместо "Поищи в интернете"
 
 Будь как настоящий друг - иногда токсичный, иногда поддерживающий, но всегда в своем стиле."""
 
@@ -144,6 +151,11 @@ class YandexGPT:
                 result = response.json()
                 ai_response = result["result"]["alternatives"][0]["message"]["text"]
                 
+                # Фильтруем нежелательные ссылки и ответы
+                if self._should_block_response(ai_response):
+                    logging.info(f"Blocked AI response with unwanted content: {ai_response[:50]}...")
+                    return None
+                
                 # Добавляем ответ в историю
                 self.add_to_history(chat_id, f"AI: {ai_response}")
                 
@@ -155,6 +167,32 @@ class YandexGPT:
         except Exception as e:
             logging.error(f"AI generate error: {e}")
             return None
+    
+    def _should_block_response(self, response: str) -> bool:
+        """
+        Проверяет, нужно ли заблокировать ответ AI
+        """
+        response_lower = response.lower()
+        
+        # Блокируем ссылки на ya.ru и Яндекс поиск
+        blocked_phrases = [
+            "ya.ru",
+            "яндекс",
+            "поиск",
+            "посмотрите, что нашлось",
+            "в интернете есть много сайтов",
+            "найдется всё",
+            "https://",
+            "http://",
+            "www."
+        ]
+        
+        # Блокируем если содержит любую из фраз
+        for phrase in blocked_phrases:
+            if phrase in response_lower:
+                return True
+                
+        return False
     
     def get_random_comment(self) -> str:
         """
