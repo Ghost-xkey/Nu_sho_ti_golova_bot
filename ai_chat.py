@@ -183,11 +183,6 @@ class YandexGPT:
             engagement_probability = 0.3 if needs_support else 0.2 if wants_conversation else 0.1
             should_auto_respond = should_engage and random.random() < engagement_probability
             
-            # Дополнительная логика: иногда включаемся в обычные разговоры (5% вероятность)
-            if not should_auto_respond and not is_meme_request and random.random() < 0.05:
-                should_auto_respond = True
-                response_type = "casual_engagement"
-            
             # Проверяем триггеры для мемов
             meme_triggers = ["мем", "картинк", "фото", "изображен", "мемчик", "мемас"]
             
@@ -229,6 +224,11 @@ class YandexGPT:
             # Случайные мемы (5% вероятность на обычные сообщения)
             if not is_meme_request and random.random() < 0.05:
                 is_meme_request = True
+            
+            # Дополнительная логика: иногда включаемся в обычные разговоры (5% вероятность)
+            if not should_auto_respond and not is_meme_request and random.random() < 0.05:
+                should_auto_respond = True
+                response_type = "casual_engagement"
             
             # Формируем промпт
             profanity_clause = "Умеренная крепкая лексика допустима, без оскорблений по признакам, угроз и явного NSFW." if ALLOW_PROFANITY else "Без мата."
