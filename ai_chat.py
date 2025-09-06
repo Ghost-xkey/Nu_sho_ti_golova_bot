@@ -26,10 +26,10 @@ class YandexGPT:
         """
         message_lower = message_text.lower().strip()
         
-        # Игнорируем простые вызовы по имени (они обрабатываются в generate_response)
+        # Простые вызовы по имени - отвечаем на них
         simple_name_calls = ["гриша", "бот"]
         if message_lower in simple_name_calls:
-            return False
+            return True
         
         # Прямые обращения к боту (но не простые вызовы)
         bot_mentions = ["ai", "ии", "помощник", "ассистент"]
@@ -258,9 +258,12 @@ class YandexGPT:
             is_repeated_message = self.check_repeated_message(chat_id, message_text)
             is_persistent_request = is_repeated_message and len(message_text) > 5  # Повторяющиеся сообщения длиннее 5 символов
             
+            # Проверяем простые вызовы по имени
+            is_simple_name_call = message_text.strip().lower() in ["гриша", "бот"]
+            
             # Определяем нужна ли поддержка или дружеское участие
-            # Исключаем простые и неинформативные сообщения, но учитываем настойчивые просьбы
-            should_engage = (needs_support or wants_conversation or is_detailed_message or is_persistent_request or wants_movie_recommendation) and not is_simple_response
+            # Исключаем простые и неинформативные сообщения, но учитываем настойчивые просьбы и простые вызовы по имени
+            should_engage = (needs_support or wants_conversation or is_detailed_message or is_persistent_request or wants_movie_recommendation or is_simple_name_call) and not is_simple_response
             
             # Проверяем, отвечал ли бот в последних сообщениях (для продолжения диалога)
             recent_bot_messages = self.get_recent_bot_messages(chat_id, limit=3)
@@ -273,6 +276,10 @@ class YandexGPT:
             if is_persistent_request:
                 engagement_probability = 0.9  # 90% вероятность ответить на настойчивую просьбу
                 response_type = "persistent_request"
+            # Простые вызовы по имени получают высокую вероятность ответа
+            elif is_simple_name_call:
+                engagement_probability = 0.95  # 95% вероятность ответить на простой вызов
+                response_type = "simple_name_call"
             # Запросы фильмов получают высокую вероятность ответа
             elif wants_movie_recommendation:
                 engagement_probability = 0.8  # 80% вероятность ответить на запрос фильма
@@ -388,6 +395,15 @@ class YandexGPT:
 - Покажи, что ты читаешь и понимаешь
 - Отреагируй на ключевые моменты
 - Прояви интерес к его истории или проблеме"""
+            elif response_type == "simple_name_call":
+                context_prompt = """
+Пользователь просто позвал тебя по имени! Будь живым и интересным:
+- Это простое обращение типа "Гриша" или "Бот"
+- Отвечай с юмором, шуткой или интересным вопросом
+- НЕ отвечай односложно типа "Да?" или "Что?"
+- Задай вопрос, пошути, или расскажи что-то интересное
+- Будь в своем характере - саркастичным, но дружелюбным
+- Развивай разговор, а не заканчивай его"""
             elif response_type == "auto_engage":
                 context_prompt = """
 Ты решил сам включиться в разговор! Будь естественным:
