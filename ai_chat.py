@@ -51,6 +51,26 @@ class YandexGPT:
         if any(signal in message_lower for signal in emotional_signals):
             return True
             
+        # Триггеры для рекомендаций фильмов
+        movie_triggers = ["что посмотреть", "посоветуй фильм", "рекомендуй фильм", "хочу посмотреть", 
+                         "что глянуть", "фильм на вечер", "кино на вечер", "хочу кино", "смотреть фильм", 
+                         "комедию", "драму", "триллер", "боевик", "фантастику", "ужасы", "детектив", 
+                         "мелодраму", "приключения", "фэнтези", "криминал"]
+        if any(trigger in message_lower for trigger in movie_triggers):
+            return True
+            
+        # Триггеры для поддержки
+        support_triggers = ["проблемы", "помощь", "помоги", "совет", "поддержка", "грустно", "плохо", 
+                           "устал", "надоело", "достало", "задолбал", "все плохо"]
+        if any(trigger in message_lower for trigger in support_triggers):
+            return True
+            
+        # Триггеры для общения
+        conversation_triggers = ["планы", "что делаешь", "как провел", "расскажи", "поделись", 
+                               "выходные", "отпуск", "как жизнь", "что нового"]
+        if any(trigger in message_lower for trigger in conversation_triggers):
+            return True
+            
         # Вопросы
         if "?" in message_text:
             return True
