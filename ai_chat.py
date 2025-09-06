@@ -137,7 +137,7 @@ class YandexGPT:
             is_profanity_request = any(trigger in message_lower for trigger in profanity_triggers)
             
             # Проверяем триггеры для мемов
-            meme_triggers = ["мем", "картинка", "фото", "изображение", "мемчик", "мемас"]
+            meme_triggers = ["мем", "картинк", "фото", "изображен", "мемчик", "мемас"]
             is_meme_request = any(trigger in message_lower for trigger in meme_triggers)
             
             # Формируем промпт
