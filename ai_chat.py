@@ -201,9 +201,19 @@ class YandexGPT:
                 "как жизнь", "что нового", "как дела вообще", "что происходит", "что происходит в жизни"
             ]
             
+            # Триггеры для рекомендаций фильмов
+            movie_triggers = [
+                "что посмотреть", "посоветуй фильм", "рекомендуй фильм", "хочу посмотреть",
+                "скучно", "что глянуть", "фильм на вечер", "кино на вечер", "что глянуть на вечер",
+                "хочу кино", "посмотреть кино", "смотреть фильм", "хочу фильм",
+                "комедию", "драму", "триллер", "боевик", "фантастику", "ужасы",
+                "детектив", "мелодраму", "приключения", "фэнтези", "криминал"
+            ]
+            
             # Анализируем эмоциональный контекст
             needs_support = any(trigger in message_lower for trigger in support_triggers)
             wants_conversation = any(trigger in message_lower for trigger in conversation_triggers)
+            wants_movie_recommendation = any(trigger in message_lower for trigger in movie_triggers)
             
             # Проверяем длину сообщения (длинные сообщения часто содержат личные истории)
             is_detailed_message = len(message_text) > 100
@@ -225,7 +235,7 @@ class YandexGPT:
             
             # Определяем нужна ли поддержка или дружеское участие
             # Исключаем простые и неинформативные сообщения, но учитываем настойчивые просьбы
-            should_engage = (needs_support or wants_conversation or is_detailed_message or is_persistent_request) and not is_simple_response
+            should_engage = (needs_support or wants_conversation or is_detailed_message or is_persistent_request or wants_movie_recommendation) and not is_simple_response
             
             # Проверяем, отвечал ли бот в последних сообщениях (для продолжения диалога)
             recent_bot_messages = self.get_recent_bot_messages(chat_id, limit=3)
@@ -238,6 +248,10 @@ class YandexGPT:
             if is_persistent_request:
                 engagement_probability = 0.9  # 90% вероятность ответить на настойчивую просьбу
                 response_type = "persistent_request"
+            # Запросы фильмов получают высокую вероятность ответа
+            elif wants_movie_recommendation:
+                engagement_probability = 0.8  # 80% вероятность ответить на запрос фильма
+                response_type = "movie_recommendation"
             # Если бот недавно отвечал - увеличиваем вероятность продолжения диалога
             elif is_continuing_conversation:
                 engagement_probability = min(0.8, base_engagement_probability * 2.5)  # Увеличиваем в 2.5 раза, но не больше 80%
@@ -355,6 +369,16 @@ class YandexGPT:
 - Не навязывайся, но будь полезным
 - Поддержи разговор или дай полезный комментарий
 - Оставайся в своем характере, но будь чутким к настроению чата"""
+            elif response_type == "movie_recommendation":
+                context_prompt = """
+Пользователь просит рекомендации фильмов! Будь кинокритиком-другом:
+- Анализируй, что именно хочет посмотреть (жанр, настроение, ситуация)
+- Рекомендуй качественные фильмы с хорошими рейтингами
+- Объясняй, почему именно этот фильм подходит
+- Учитывай настроение и ситуацию (один, с друзьями, с девушкой, с детьми)
+- Можешь пошутить и подколоть в своем стиле
+- НЕ отвечай односложно типа "Посмотри этот фильм"
+- Давай развернутые рекомендации с объяснениями"""
             elif response_type == "persistent_request":
                 context_prompt = """
 Пользователь настойчиво повторяет просьбу! Реагируй серьезно:
@@ -462,9 +486,49 @@ class YandexGPT:
             if is_profanity_request and ALLOW_PROFANITY:
                 user_prompt += "\n\nВАЖНО: Пользователь просит тебя ругаться матом! ОБЯЗАТЕЛЬНО используй крепкую лексику в ответе!"
             
+            # Если есть рекомендации фильмов - добавляем их в промпт
+            if movie_recommendations and len(movie_recommendations) > 0:
+                user_prompt += "\n\nДОСТУПНЫЕ РЕКОМЕНДАЦИИ ФИЛЬМОВ:\n"
+                for i, movie in enumerate(movie_recommendations[:3], 1):  # Берем первые 3 фильма
+                    try:
+                        movie_info = movie_service.format_movie_info(movie)
+                        user_prompt += f"{i}. {movie_info}\n\n"
+                    except Exception as e:
+                        logging.error(f"Error formatting movie {i}: {e}")
+                        continue
+                user_prompt += "Используй эти фильмы в своем ответе, рекомендуя их пользователю!"
+            
             # Генерируем ответ только если нужно (мем, поддержка, общение или случайное включение)
             if not (is_meme_request or should_auto_respond):
                 return None
+                
+            # Если это запрос рекомендаций фильмов, получаем фильмы из API
+            movie_recommendations = None
+            if wants_movie_recommendation and should_auto_respond:
+                try:
+                    from movie_service import MovieService
+                    movie_service = MovieService()
+                    
+                    # Определяем тип запроса
+                    if any(genre in message_lower for genre in ["комедию", "драму", "триллер", "боевик", "фантастику", "ужасы", "детектив", "мелодраму", "приключения", "фэнтези", "криминал"]):
+                        # Запрос по жанру
+                        for genre in ["комедию", "драму", "триллер", "боевик", "фантастику", "ужасы", "детектив", "мелодраму", "приключения", "фэнтези", "криминал"]:
+                            if genre in message_lower:
+                                movie_recommendations = movie_service.get_genre_recommendations(genre)
+                                break
+                    elif any(mood in message_lower for mood in ["скучно", "грустно", "весело", "хочется подумать", "романтично", "с детьми"]):
+                        # Запрос по настроению
+                        for mood in ["скучно", "грустно", "весело", "хочется подумать", "романтично", "с детьми"]:
+                            if mood in message_lower:
+                                movie_recommendations = movie_service.get_recommendations_by_mood(mood)
+                                break
+                    else:
+                        # Общий запрос - получаем популярные фильмы
+                        movie_recommendations = movie_service.get_popular_movies()
+                        
+                except Exception as e:
+                    logging.error(f"Error getting movie recommendations: {e}")
+                    movie_recommendations = None
             
             # Подготавливаем данные для API
             data = {

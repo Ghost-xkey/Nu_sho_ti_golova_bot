@@ -38,6 +38,9 @@ def get_yearly_photo():
 YANDEX_API_KEY = os.getenv("YANDEX_API_KEY", "")  # API ключ YandexGPT (не хранить в гите)
 YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID", "b1gr16qlpg0u8bo2h5eg")  # Folder ID проекта
 
+# Настройки Кинопоиска
+KINOPOISK_API_TOKEN = os.getenv("KINOPOISK_API_TOKEN", "PVB3DPY-4E7MSX5-Q1SEQPV-J5KXG8T")
+
 # Настройки AI поведения
 AI_ENABLED = True  # Включен ли AI-чат
 AI_RESPONSE_CHANCE = 0.1  # Вероятность случайного ответа (10%)
