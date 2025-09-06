@@ -304,8 +304,8 @@ class MemeGenerator:
         
         return self.create_meme(template_id, top_text, bottom_text)
 
-    def create_context_meme(self, message_text: str, user_info: str = "") -> Optional[str]:
-        """Создает мем на основе контекста сообщения"""
+    def create_context_meme(self, message_text: str, user_info: str = "", meme_type: str = "general") -> Optional[str]:
+        """Создает мем на основе контекста сообщения и типа"""
         message_lower = message_text.lower()
         
         # Определяем тип мема по контексту
@@ -317,10 +317,49 @@ class MemeGenerator:
             return self.create_personal_meme("profanity")
         elif any(word in message_lower for word in ["шутка", "анекдот", "юмор", "смешно"]):
             return self.create_personal_meme("jokes")
+        
+        # Создаем мем по типу
+        if meme_type == "person":
+            # Мемы про людей
+            templates = ["distracted_boyfriend", "drake_approving", "expanding_brain"]
+            top_text = "Кто это?"
+            bottom_text = "Это же Гриша знает!"
+        elif meme_type == "mood":
+            # Мемы про настроение
+            templates = ["this_is_fine", "drake_approving", "two_buttons"]
+            top_text = "Настроение"
+            bottom_text = "Все норм!"
+        elif meme_type == "work":
+            # Мемы про работу
+            templates = ["distracted_boyfriend", "expanding_brain", "drake_approving"]
+            top_text = "Работа"
+            bottom_text = "Гриша поможет!"
+        elif meme_type == "food":
+            # Мемы про еду
+            templates = ["drake_approving", "distracted_boyfriend", "this_is_fine"]
+            top_text = "Еда"
+            bottom_text = "Вкусно!"
+        elif meme_type == "weather":
+            # Мемы про погоду
+            templates = ["this_is_fine", "two_buttons", "drake_approving"]
+            top_text = "Погода"
+            bottom_text = "Как обычно!"
+        elif meme_type == "entertainment":
+            # Мемы про развлечения
+            templates = ["expanding_brain", "drake_approving", "distracted_boyfriend"]
+            top_text = "Развлечения"
+            bottom_text = "Круто!"
         else:
-            # Создаем случайный мем
-            template_id = random.choice(list(self.meme_templates.values()))
-            return self.create_meme(template_id, "Гриша шутит", "")
+            # Общие мемы
+            templates = list(self.meme_templates.keys())
+            top_text = "Гриша"
+            bottom_text = "Всегда готов!"
+        
+        # Выбираем случайный шаблон из подходящих
+        template_name = random.choice(templates)
+        template_id = self.meme_templates.get(template_name, 61579)  # fallback
+        
+        return self.create_meme(template_id, top_text, bottom_text)
 
     def create_random_meme(self) -> Optional[str]:
         """Создает случайный мем"""

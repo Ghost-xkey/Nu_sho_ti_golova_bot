@@ -138,7 +138,43 @@ class YandexGPT:
             
             # Проверяем триггеры для мемов
             meme_triggers = ["мем", "картинк", "фото", "изображен", "мемчик", "мемас"]
-            is_meme_request = any(trigger in message_lower for trigger in meme_triggers)
+            
+            # Автоматические триггеры для мемов (вопросы, ситуации)
+            auto_meme_triggers = [
+                # Вопросы про участников
+                "кто такой", "что делает", "где", "как дела", "как поживаешь",
+                # Эмоциональные ситуации  
+                "скучно", "грустно", "устал", "плохо", "отлично", "круто", "весело",
+                "праздник", "день рождения", "поздравляю", "счастья",
+                # Жалобы и проблемы
+                "проблема", "беда", "не работает", "сломалось", "не получается",
+                # Вопросы про работу/учебу
+                "работа", "учеба", "экзамен", "зачет", "проект", "дедлайн",
+                # Еда и развлечения
+                "голоден", "еда", "ресторан", "кафе", "пицца", "кофе", "чай",
+                "игра", "фильм", "сериал", "музыка", "концерт",
+                # Погода и природа
+                "погода", "дождь", "снег", "солнце", "жара", "холод",
+                # Вопросы про планы
+                "что делаешь", "планы", "выходные", "отпуск", "каникулы"
+            ]
+            
+            # Проверяем явные запросы мемов
+            is_explicit_meme = any(trigger in message_lower for trigger in meme_triggers)
+            
+            # Проверяем автоматические триггеры
+            is_auto_meme = any(trigger in message_lower for trigger in auto_meme_triggers)
+            
+            # Если это вопрос с восклицательным знаком - больше шансов на мем
+            is_question = "?" in message_text
+            is_exclamation = "!" in message_text
+            
+            # Определяем финальное решение
+            is_meme_request = is_explicit_meme or (is_auto_meme and (is_question or is_exclamation))
+            
+            # Случайные мемы (5% вероятность на обычные сообщения)
+            if not is_meme_request and random.random() < 0.05:
+                is_meme_request = True
             
             # Формируем промпт
             profanity_clause = "Умеренная крепкая лексика допустима, без оскорблений по признакам, угроз и явного NSFW." if ALLOW_PROFANITY else "Без мата."
@@ -288,7 +324,25 @@ class YandexGPT:
                 if is_meme_request:
                     try:
                         from meme_generator import meme_generator
-                        meme_url = meme_generator.create_context_meme(message_text, users_info)
+                        
+                        # Определяем тип мема для лучшего контекста
+                        meme_type = "general"
+                        if is_explicit_meme:
+                            meme_type = "explicit"
+                        elif any(word in message_lower for word in ["кто такой", "что делает"]):
+                            meme_type = "person"
+                        elif any(word in message_lower for word in ["скучно", "грустно", "устал"]):
+                            meme_type = "mood"
+                        elif any(word in message_lower for word in ["работа", "учеба", "проект"]):
+                            meme_type = "work"
+                        elif any(word in message_lower for word in ["еда", "голоден", "пицца"]):
+                            meme_type = "food"
+                        elif any(word in message_lower for word in ["погода", "дождь", "снег"]):
+                            meme_type = "weather"
+                        elif any(word in message_lower for word in ["игра", "фильм", "музыка"]):
+                            meme_type = "entertainment"
+                        
+                        meme_url = meme_generator.create_context_meme(message_text, users_info, meme_type)
                         if meme_url:
                             # Возвращаем специальный ответ с URL мема
                             return f"MEME:{meme_url}:{ai_response}"
