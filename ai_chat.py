@@ -487,7 +487,7 @@ class YandexGPT:
                 user_prompt += "\n\nВАЖНО: Пользователь просит тебя ругаться матом! ОБЯЗАТЕЛЬНО используй крепкую лексику в ответе!"
             
             # Если есть рекомендации фильмов - добавляем их в промпт
-            if movie_recommendations and len(movie_recommendations) > 0:
+            if movie_recommendations and len(movie_recommendations) > 0 and movie_service:
                 user_prompt += "\n\nДОСТУПНЫЕ РЕКОМЕНДАЦИИ ФИЛЬМОВ:\n"
                 for i, movie in enumerate(movie_recommendations[:3], 1):  # Берем первые 3 фильма
                     try:
@@ -502,8 +502,11 @@ class YandexGPT:
             if not (is_meme_request or should_auto_respond):
                 return None
                 
-            # Если это запрос рекомендаций фильмов, получаем фильмы из API
+            # Инициализируем переменную для рекомендаций фильмов
             movie_recommendations = None
+            movie_service = None
+            
+            # Если это запрос рекомендаций фильмов, получаем фильмы из API
             if wants_movie_recommendation and should_auto_respond:
                 try:
                     from movie_service import MovieService
