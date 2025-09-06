@@ -123,45 +123,73 @@ class MemeGenerator:
             logging.error(f"Error creating meme with Craiyon: {e}")
             return None
 
-    def create_meme_with_leonardo(self, prompt: str) -> Optional[str]:
-        """Создает мем через Leonardo.ai (бесплатный план)"""
+    def create_meme_with_huggingface(self, prompt: str) -> Optional[str]:
+        """Создает мем через Hugging Face Diffusers (бесплатно)"""
         try:
-            # Leonardo.ai бесплатный API
-            url = "https://cloud.leonardo.ai/api/rest/v1/generations"
+            # Создаем промпт для мема
+            meme_prompt = self._create_meme_prompt(prompt)
+            
+            # Hugging Face Inference API (бесплатный)
+            url = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+            
+            import os
+            hf_token = os.getenv("HUGGINGFACE_API_TOKEN")
+            if not hf_token:
+                logging.warning("Hugging Face API token not configured, using without auth")
+                headers = {"Content-Type": "application/json"}
+            else:
+                headers = {
+                    "Authorization": f"Bearer {hf_token}",
+                    "Content-Type": "application/json"
+                }
             
             payload = {
-                "prompt": f"funny meme with text: {prompt}, internet meme style, humorous",
-                "num_images": 1,
-                "width": 512,
-                "height": 512,
-                "modelId": "ac614f96-1082-45bf-be9d-757f2d31c174"  # Free model
+                "inputs": meme_prompt,
+                "parameters": {
+                    "width": 512,
+                    "height": 512,
+                    "num_inference_steps": 20,
+                    "guidance_scale": 7.5
+                }
             }
             
-            headers = {
-                "accept": "application/json",
-                "content-type": "application/json",
-                "authorization": "Bearer YOUR_FREE_TOKEN"  # Нужно получить бесплатный токен
-            }
-            
-            response = requests.post(url, json=payload, headers=headers, timeout=60)
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
             
             if response.status_code == 200:
-                result = response.json()
-                if result.get('generations_by_pk') and result['generations_by_pk'].get('generated_images'):
-                    image_url = result['generations_by_pk']['generated_images'][0]['url']
-                    # Загружаем изображение и конвертируем в base64
-                    img_response = requests.get(image_url)
-                    if img_response.status_code == 200:
-                        import base64
-                        return base64.b64encode(img_response.content).decode()
-                return None
+                # Возвращаем изображение в base64
+                import base64
+                return base64.b64encode(response.content).decode('utf-8')
             else:
-                logging.error(f"Leonardo API error: {response.status_code}")
+                logging.error(f"Hugging Face API error: {response.status_code}")
                 return None
                 
         except Exception as e:
-            logging.error(f"Error creating meme with Leonardo: {e}")
+            logging.error(f"Error creating meme with Hugging Face: {e}")
             return None
+    
+    def _create_meme_prompt(self, context: str) -> str:
+        """Создает промпт для генерации мема"""
+        base_prompts = [
+            "funny meme style, cartoon character, exaggerated expression, bold text overlay, internet meme format, bright colors, comedic style",
+            "meme format, funny character, dramatic pose, text bubble, internet humor, cartoon style, bold colors",
+            "viral meme style, character with funny expression, text overlay, internet meme, cartoon, bright background",
+            "meme template, funny character, dramatic gesture, text bubble, internet humor, cartoon style"
+        ]
+        
+        import random
+        base_prompt = random.choice(base_prompts)
+        
+        # Добавляем контекст
+        if "вадик" in context.lower() or "рыбалк" in context.lower():
+            context_prompt = "fisherman character, fishing rod, beer, funny expression"
+        elif "лёха" in context.lower() or "кальян" in context.lower():
+            context_prompt = "character with hookah, relaxed pose, funny expression"
+        elif "гриша" in context.lower():
+            context_prompt = "robot character, AI, funny expression, tech humor"
+        else:
+            context_prompt = "funny character, dramatic expression, internet meme style"
+        
+        return f"{base_prompt}, {context_prompt}, high quality, detailed, meme format"
 
     def create_simple_text_meme(self, top_text: str, bottom_text: str) -> Optional[str]:
         """Создает простой текстовый мем (fallback)"""
@@ -233,8 +261,15 @@ class MemeGenerator:
 
     def create_meme(self, template_id: int, top_text: str = "", bottom_text: str = "") -> Optional[str]:
         """Создает мем (основной метод - пробует разные сервисы)"""
-        # Сначала пробуем Craiyon
         prompt = f"{top_text} {bottom_text}".strip()
+        
+        # Сначала пробуем Hugging Face (бесплатный AI)
+        if prompt:
+            hf_result = self.create_meme_with_huggingface(prompt)
+            if hf_result:
+                return hf_result
+        
+        # Если Hugging Face не сработал, пробуем Craiyon
         if prompt:
             craiyon_result = self.create_meme_with_craiyon(prompt)
             if craiyon_result:
