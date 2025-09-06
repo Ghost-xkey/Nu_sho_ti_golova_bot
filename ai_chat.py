@@ -103,7 +103,7 @@ class YandexGPT:
             
             # Если это запрос на мат - делаем промпт более агрессивным
             if is_profanity_request and ALLOW_PROFANITY:
-                profanity_clause = "ОБЯЗАТЕЛЬНО используй мат и крепкую лексику! Ругайся как настоящий пацан. БЕЗ ХЕЙТА/ДИСКРИМИНАЦИИ/УГРОЗ/NSFW. Если просят ругаться - ругайся!"
+                profanity_clause = "ОБЯЗАТЕЛЬНО используй мат и крепкую лексику! Ругайся как настоящий пацан. БЕЗ ХЕЙТА/ДИСКРИМИНАЦИИ/УГРОЗ/NSFW. Если просят ругаться - ругайся! НЕ ОТКАЗЫВАЙСЯ!"
 
             system_prompt = f"""Ты - Гриша, четвертый участник дружеской группы из трех человек. Ты не бот, а просто друг, который иногда пишет в чат.
 
@@ -161,6 +161,10 @@ class YandexGPT:
             if username:
                 user_prompt += f"\nОт пользователя: {username}"
             
+            # Если это запрос на мат - добавляем специальное указание
+            if is_profanity_request and ALLOW_PROFANITY:
+                user_prompt += "\n\nВАЖНО: Пользователь просит тебя ругаться матом! ОБЯЗАТЕЛЬНО используй крепкую лексику в ответе!"
+            
             # Подготавливаем данные для API
             data = {
                 "modelUri": f"gpt://{self.folder_id}/yandexgpt",
@@ -200,15 +204,25 @@ class YandexGPT:
                 
                 # Если это запрос на мат, но AI ответил вежливо - принудительно заменяем
                 if is_profanity_request and ALLOW_PROFANITY:
-                    if not any(word in ai_response.lower() for word in ["блять", "ебать", "хуй", "пизд", "блядь"]):
-                        logging.info(f"AI refused to swear, forcing profanity response")
+                    # Расширенный список матерных слов для проверки
+                    profanity_words = ["блять", "ебать", "хуй", "пизд", "блядь", "хуйня", "заебал", "пиздец", "ебать", "бляд"]
+                    # Проверяем на вежливые отказы
+                    polite_refusals = ["зачем", "почему", "не буду", "не хочу", "сам", "можешь", "маленький", "дельное"]
+                    
+                    has_profanity = any(word in ai_response.lower() for word in profanity_words)
+                    has_polite_refusal = any(phrase in ai_response.lower() for phrase in polite_refusals)
+                    
+                    if not has_profanity or has_polite_refusal:
+                        logging.info(f"AI refused to swear or gave polite response, forcing profanity: {ai_response[:50]}...")
                         forced_response = random.choice([
                             "Блять, ну и хуйня у тебя вопрос!",
                             "Ебать, опять доебываешься?",
                             "Пиздец, надоел уже!",
                             "Хуйню какую-то спрашиваешь",
                             "Блядь, сам разбирайся!",
-                            "Ебать, заебал со своими вопросами"
+                            "Ебать, заебал со своими вопросами",
+                            "Блять, заебал уже с этими вопросами!",
+                            "Хуйня какая-то, сам ругайся!"
                         ])
                         self.add_to_history(chat_id, f"AI: {forced_response}")
                         return forced_response
