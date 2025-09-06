@@ -51,8 +51,7 @@ class MovieService:
             url = f"{self.base_url}/v1.4/movie"
             params = {
                 "limit": limit,
-                "page": 1,
-                "notNullFields": "name,description,rating.kp,poster.url"
+                "page": 1
             }
             
             if genre:
@@ -62,7 +61,7 @@ class MovieService:
             if rating_min:
                 params["rating.kp"] = f"{rating_min}-10"
                 
-            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response = requests.get(url, headers=self.headers, params=params, timeout=30)
             
             if response.status_code == 200:
                 data = response.json()
@@ -79,14 +78,12 @@ class MovieService:
         """Получить случайный фильм"""
         try:
             url = f"{self.base_url}/v1.4/movie/random"
-            params = {
-                "notNullFields": "name,description,rating.kp,poster.url"
-            }
+            params = {}
             
             if genre:
                 params["genres.name"] = genre
                 
-            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response = requests.get(url, headers=self.headers, params=params, timeout=30)
             
             if response.status_code == 200:
                 return response.json()
@@ -105,11 +102,10 @@ class MovieService:
             params = {
                 "query": name,
                 "limit": 5,
-                "page": 1,
-                "notNullFields": "name,description,rating.kp,poster.url"
+                "page": 1
             }
             
-            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response = requests.get(url, headers=self.headers, params=params, timeout=30)
             
             if response.status_code == 200:
                 data = response.json()
@@ -150,12 +146,14 @@ class MovieService:
             name = movie.get("name", "Неизвестно")
             name_en = movie.get("alternativeName", "")
             year = movie.get("year", "")
-            rating = movie.get("rating", {}).get("kp", 0)
+            rating_data = movie.get("rating", {})
+            rating = rating_data.get("kp", 0) if rating_data else 0
             description = movie.get("description", "Описание отсутствует")
-            poster_url = movie.get("poster", {}).get("url", "")
+            poster_data = movie.get("poster", {})
+            poster_url = poster_data.get("url", "") if poster_data else ""
             
             # Обрезаем описание если слишком длинное
-            if len(description) > 200:
+            if description and len(description) > 200:
                 description = description[:200] + "..."
                 
             # Формируем строку
