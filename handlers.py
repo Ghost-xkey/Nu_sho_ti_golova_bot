@@ -1562,6 +1562,22 @@ async def cmd_user_info(message: types.Message):
         logging.error(f"Error in user_info command: {e}")
         await message.answer("❌ Произошла ошибка при получении информации о пользователе")
 
+@router.message(Command("init_users"))
+async def cmd_init_users(message: types.Message):
+    """Инициализировать пользователей по умолчанию"""
+    try:
+        from db import init_default_users
+        
+        success = init_default_users()
+        if success:
+            await message.answer("✅ Пользователи по умолчанию инициализированы!\n\n👤 @vadik7k (Вадик)\n👤 @perfomers (Лёха)")
+        else:
+            await message.answer("❌ Ошибка при инициализации пользователей")
+            
+    except Exception as e:
+        logging.error(f"Error in init_users command: {e}")
+        await message.answer("❌ Произошла ошибка при инициализации пользователей")
+
 @router.message(Command("mat_off"))
 async def cmd_mat_off(message: types.Message):
     try:

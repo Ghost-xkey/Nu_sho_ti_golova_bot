@@ -57,6 +57,16 @@ async def on_startup(dispatcher):
             import traceback
             traceback.print_exc()
         
+        # Инициализируем пользователей по умолчанию
+        try:
+            from db import init_default_users
+            init_default_users()
+            logging.info("✅ Default users initialized successfully")
+        except Exception as users_error:
+            logging.error(f"❌ Error initializing default users: {users_error}")
+            import traceback
+            traceback.print_exc()
+        
         logging.info("Database initialized")
         
         logging.info("Starting scheduler...")

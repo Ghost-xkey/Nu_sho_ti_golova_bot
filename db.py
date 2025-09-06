@@ -336,6 +336,52 @@ def get_total_users():
     finally:
         conn.close()
 
+def init_default_users():
+    """Инициализирует пользователей по умолчанию"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Вадик
+        vadik_info = {
+            'user_id': 1210990768,
+            'username': 'vadik7k',
+            'nickname': 'Вадик',
+            'description': 'Калмык, халя, рыбак, пенсия. Любит рыбалку и пиво по вечерам. Косоглазый, работает связистом, живет в Выборге, ездит на октахе, мечтает купить катер. Ловит судаков, играет в футбол. Есть брат Саша. Купил дом, но не сделал ремонт. Бросает курить, переобувается, иногда теряется от друзей. Добрый и помогает друзьям.',
+            'traits': 'Косоглазый, добрый, помогает друзьям, иногда теряется',
+            'jokes_about': 'Шутит про его косоглазие, рыбалку, пиво, дом без ремонта, попытки бросить курить, мечты о катере'
+        }
+        
+        # Лёха
+        leha_info = {
+            'user_id': 5166587439,
+            'username': 'perfomers',
+            'nickname': 'Лёха',
+            'description': 'Перформер, брат. Любит кальяны и играть в плойку. Иногда ездит на рыбалку. Живет в Никеле, не был на сверхглубокой. Зимой не видит солнца, иногда видит Норвегию, но не может туда съездить. Любит BMW, но ходит пешком. Иногда парит девчонок в бане, забивает елки с малиной в кальян. Любит вискарь с колой, играет с Диманом в плойку и пьет виски. Лечит зубы, иногда ранимый, иногда тяжелый на подъем.',
+            'traits': 'Ранимый, тяжелый на подъем, любит кальяны и виски',
+            'jokes_about': 'Шутит про его жизнь в Никеле без солнца, мечты о BMW при ходьбе пешком, кальянную зависимость, лечение зубов, ранимость'
+        }
+        
+        # Добавляем пользователей
+        for user_info in [vadik_info, leha_info]:
+            cursor.execute('''INSERT OR REPLACE INTO users 
+                             (user_id, username, first_name, last_name, nickname, description, traits, jokes_about, updated_at)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)''',
+                          (user_info['user_id'], user_info['username'], None, None, 
+                           user_info['nickname'], user_info['description'], 
+                           user_info['traits'], user_info['jokes_about']))
+        
+        conn.commit()
+        print("✅ Default users initialized successfully")
+        return True
+        
+    except Exception as e:
+        print(f"Error initializing default users: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    finally:
+        conn.close()
+
 # Функции для работы с ежегодными событиями
 def add_yearly_event(name, day, month, hour=10, minute=0, message="", music_url="", photo_file_id=""):
     """Добавляет новое ежегодное событие"""
