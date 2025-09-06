@@ -53,8 +53,16 @@ def create_tables():
         cursor = conn.cursor()
         print("Creating users table...")
         cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                            id INTEGER PRIMARY KEY,
-                            username TEXT)''')
+                            user_id INTEGER PRIMARY KEY,
+                            username TEXT,
+                            first_name TEXT,
+                            last_name TEXT,
+                            nickname TEXT,
+                            description TEXT,
+                            traits TEXT,
+                            jokes_about TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         
         print("Creating video_messages table...")
         cursor.execute('''CREATE TABLE IF NOT EXISTS video_messages (
@@ -193,19 +201,115 @@ def get_user_stats():
     finally:
         conn.close()
 
-def save_user(user_id, username=None):
+def save_user(user_id, username=None, first_name=None, last_name=None):
     """Сохраняет пользователя в базу данных"""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('''INSERT OR IGNORE INTO users (id, username) VALUES (?, ?)''',
-                      (user_id, username))
+        cursor.execute('''INSERT OR IGNORE INTO users (user_id, username, first_name, last_name) VALUES (?, ?, ?, ?)''',
+                      (user_id, username, first_name, last_name))
         conn.commit()
         print(f"User saved: {user_id}, username: {username}")
         return True
     except Exception as e:
         print(f"Error saving user: {e}")
         return False
+    finally:
+        conn.close()
+
+def update_user_info(user_id, nickname=None, description=None, traits=None, jokes_about=None):
+    """Обновляет информацию о пользователе"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Формируем запрос обновления
+        updates = []
+        values = []
+        
+        if nickname is not None:
+            updates.append("nickname = ?")
+            values.append(nickname)
+        if description is not None:
+            updates.append("description = ?")
+            values.append(description)
+        if traits is not None:
+            updates.append("traits = ?")
+            values.append(traits)
+        if jokes_about is not None:
+            updates.append("jokes_about = ?")
+            values.append(jokes_about)
+            
+        if updates:
+            updates.append("updated_at = CURRENT_TIMESTAMP")
+            values.append(user_id)
+            
+            query = f"UPDATE users SET {', '.join(updates)} WHERE user_id = ?"
+            cursor.execute(query, values)
+            conn.commit()
+            print(f"User {user_id} updated successfully")
+            return True
+        else:
+            print("No updates provided")
+            return False
+            
+    except Exception as e:
+        print(f"Error updating user info: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_user_info(user_id):
+    """Получает информацию о пользователе"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''SELECT user_id, username, first_name, last_name, nickname, 
+                         description, traits, jokes_about 
+                         FROM users WHERE user_id = ?''', (user_id,))
+        result = cursor.fetchone()
+        if result:
+            return {
+                'user_id': result[0],
+                'username': result[1],
+                'first_name': result[2],
+                'last_name': result[3],
+                'nickname': result[4],
+                'description': result[5],
+                'traits': result[6],
+                'jokes_about': result[7]
+            }
+        return None
+    except Exception as e:
+        print(f"Error getting user info: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_all_users():
+    """Получает информацию о всех пользователях"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''SELECT user_id, username, first_name, last_name, nickname, 
+                         description, traits, jokes_about 
+                         FROM users ORDER BY username''')
+        results = cursor.fetchall()
+        users = []
+        for result in results:
+            users.append({
+                'user_id': result[0],
+                'username': result[1],
+                'first_name': result[2],
+                'last_name': result[3],
+                'nickname': result[4],
+                'description': result[5],
+                'traits': result[6],
+                'jokes_about': result[7]
+            })
+        return users
+    except Exception as e:
+        print(f"Error getting all users: {e}")
+        return []
     finally:
         conn.close()
 

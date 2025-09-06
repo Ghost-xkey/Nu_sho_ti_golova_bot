@@ -67,6 +67,35 @@ class YandexGPT:
         context = "\n".join([f"Пользователь: {msg}" for msg in recent_messages])
         return context
     
+    def get_users_info(self, chat_id: str) -> str:
+        """
+        Получает информацию о всех пользователях чата
+        """
+        try:
+            from db import get_all_users
+            
+            users = get_all_users()
+            if not users:
+                return ""
+            
+            users_info = "Информация об участниках чата:\n"
+            for user in users:
+                username = f"@{user['username']}" if user['username'] else "без username"
+                nickname = user['nickname'] or "никнейм не указан"
+                description = user['description'] or "описание не указано"
+                traits = user['traits'] or "черты не указаны"
+                jokes_about = user['jokes_about'] or "шутки не указаны"
+                
+                users_info += f"- {username} ({nickname}): {description}\n"
+                users_info += f"  Черты: {traits}\n"
+                users_info += f"  Шутки про него: {jokes_about}\n\n"
+            
+            return users_info
+            
+        except Exception as e:
+            logging.error(f"Error getting users info: {e}")
+            return ""
+    
     def add_to_history(self, chat_id: str, message: str):
         """
         Добавляет сообщение в историю чата
@@ -90,6 +119,9 @@ class YandexGPT:
             
             # Получаем контекст
             context = self.get_chat_context(chat_id)
+            
+            # Получаем информацию о пользователях
+            users_info = self.get_users_info(chat_id)
             
             # Проверяем триггеры мата
             message_lower = message_text.lower()
@@ -155,6 +187,16 @@ class YandexGPT:
             system_prompt += """
 
 Будь как настоящий друг - иногда токсичный, иногда поддерживающий, любишь черный юмор, но всегда в своем стиле."""
+
+            # Добавляем информацию о пользователях если есть
+            if users_info:
+                system_prompt += f"\n\n{users_info}"
+                system_prompt += """
+- Можешь шутить про участников чата, используя информацию о них
+- Подкалывать за их черты характера или особенности  
+- Делать персонализированные шутки
+- Но не переходи на личности - все в дружеском ключе
+- Используй их никнеймы и особенности для шуток"""
 
             user_prompt = f"Контекст последних сообщений:\n{context}\n\nТекущее сообщение: {message_text}"
             

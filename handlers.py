@@ -1437,6 +1437,131 @@ async def cmd_mat_on(message: types.Message):
     except Exception as e:
         logging.error(f"Error toggling profanity on: {e}")
 
+# Команды для управления пользователями
+@router.message(Command("add_user"))
+async def cmd_add_user(message: types.Message):
+    """Добавить/обновить информацию о пользователе
+    Использование: /add_user @username "Никнейм" "Описание" "Черты характера" "Шутки про него"
+    """
+    try:
+        from db import update_user_info, save_user
+        import re
+        
+        text = message.text
+        # Парсим команду: /add_user @username "nickname" "description" "traits" "jokes"
+        parts = re.findall(r'@(\w+)|"([^"]*)"', text)
+        
+        if len(parts) < 2:
+            await message.answer(
+                "❌ Неверный формат команды!\n\n"
+                "Использование:\n"
+                "/add_user @username \"Никнейм\" \"Описание\" \"Черты характера\" \"Шутки про него\"\n\n"
+                "Пример:\n"
+                "/add_user @dmitriy \"Дима\" \"Программист, любит кофе\" \"Нервный, заикается\" \"Шутит про его кофе-зависимость\""
+            )
+            return
+        
+        username = parts[0][0] if parts[0][0] else parts[0][1]
+        nickname = parts[1][1] if len(parts) > 1 and parts[1][1] else None
+        description = parts[2][1] if len(parts) > 2 and parts[2][1] else None
+        traits = parts[3][1] if len(parts) > 3 and parts[3][1] else None
+        jokes_about = parts[4][1] if len(parts) > 4 and parts[4][1] else None
+        
+        # Получаем user_id по username (нужно будет добавить функцию для этого)
+        # Пока используем фиктивный ID
+        user_id = hash(username) % 1000000  # Временное решение
+        
+        # Сохраняем пользователя
+        save_user(user_id, username=username)
+        
+        # Обновляем информацию
+        success = update_user_info(user_id, nickname, description, traits, jokes_about)
+        
+        if success:
+            await message.answer(
+                f"✅ Пользователь @{username} добавлен/обновлен!\n\n"
+                f"👤 Никнейм: {nickname or 'не указан'}\n"
+                f"📝 Описание: {description or 'не указано'}\n"
+                f"🎭 Черты: {traits or 'не указаны'}\n"
+                f"😄 Шутки: {jokes_about or 'не указаны'}"
+            )
+        else:
+            await message.answer("❌ Ошибка при сохранении пользователя")
+            
+    except Exception as e:
+        logging.error(f"Error in add_user command: {e}")
+        await message.answer("❌ Произошла ошибка при добавлении пользователя")
+
+@router.message(Command("users"))
+async def cmd_users(message: types.Message):
+    """Показать всех пользователей"""
+    try:
+        from db import get_all_users
+        
+        users = get_all_users()
+        if not users:
+            await message.answer("📝 Пользователи не добавлены")
+            return
+        
+        text = "👥 Список пользователей:\n\n"
+        for user in users:
+            username = f"@{user['username']}" if user['username'] else "без username"
+            nickname = user['nickname'] or "не указан"
+            description = user['description'] or "не указано"
+            
+            text += f"👤 {username} ({nickname})\n"
+            text += f"📝 {description}\n"
+            if user['traits']:
+                text += f"🎭 {user['traits']}\n"
+            if user['jokes_about']:
+                text += f"😄 {user['jokes_about']}\n"
+            text += "\n"
+        
+        # Разбиваем на части если текст слишком длинный
+        if len(text) > 4000:
+            parts = [text[i:i+4000] for i in range(0, len(text), 4000)]
+            for part in parts:
+                await message.answer(part)
+        else:
+            await message.answer(text)
+            
+    except Exception as e:
+        logging.error(f"Error in users command: {e}")
+        await message.answer("❌ Произошла ошибка при получении списка пользователей")
+
+@router.message(Command("user_info"))
+async def cmd_user_info(message: types.Message):
+    """Показать информацию о конкретном пользователе"""
+    try:
+        from db import get_user_info
+        import re
+        
+        text = message.text
+        # Ищем @username в команде
+        match = re.search(r'@(\w+)', text)
+        if not match:
+            await message.answer("❌ Укажите username пользователя: /user_info @username")
+            return
+        
+        username = match.group(1)
+        user_id = hash(username) % 1000000  # Временное решение
+        
+        user = get_user_info(user_id)
+        if not user:
+            await message.answer(f"❌ Пользователь @{username} не найден")
+            return
+        
+        response = f"👤 Информация о @{username}:\n\n"
+        response += f"📝 Описание: {user['description'] or 'не указано'}\n"
+        response += f"🎭 Черты характера: {user['traits'] or 'не указаны'}\n"
+        response += f"😄 Шутки про него: {user['jokes_about'] or 'не указаны'}\n"
+        
+        await message.answer(response)
+        
+    except Exception as e:
+        logging.error(f"Error in user_info command: {e}")
+        await message.answer("❌ Произошла ошибка при получении информации о пользователе")
+
 @router.message(Command("mat_off"))
 async def cmd_mat_off(message: types.Message):
     try:
