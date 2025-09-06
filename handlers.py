@@ -1365,7 +1365,7 @@ async def handle_voice_message(message: types.Message):
             else:
                 # Fallback ответ
                 text_lower = text_from_voice.lower()
-                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно"]
+                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно", "агрессивный", "достать", "рассмеши"]
                 is_profanity_request = any(trigger in text_lower for trigger in profanity_triggers)
                 fallback_response = yandex_ai.get_random_comment(is_profanity_request)
                 voice_fallback = speech_kit.text_to_voice(fallback_response)
@@ -1417,7 +1417,7 @@ async def handle_ai_message(message: types.Message):
             else:
                 # Fallback - случайный комментарий
                 message_lower = message.text.lower()
-                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно"]
+                profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно", "агрессивный", "достать", "рассмеши"]
                 is_profanity_request = any(trigger in message_lower for trigger in profanity_triggers)
                 fallback_response = yandex_ai.get_random_comment(is_profanity_request)
                 await message.reply(fallback_response)
