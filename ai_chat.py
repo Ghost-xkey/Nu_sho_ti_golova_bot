@@ -107,17 +107,11 @@ class YandexGPT:
     def get_recent_bot_messages(self, chat_id: str, limit: int = 3) -> list:
         """Получает последние сообщения бота для определения продолжения диалога"""
         try:
-            from db import get_chat_history
-            history = get_chat_history(chat_id, limit=limit * 2)  # Берем больше, чтобы найти сообщения бота
-            
-            bot_messages = []
-            for message in history:
-                if message.get('is_bot', False):
-                    bot_messages.append(message)
-                    if len(bot_messages) >= limit:
-                        break
-            
-            return bot_messages
+            # Простая логика: если в истории чата есть сообщения, считаем что бот мог отвечать
+            if chat_id in self.chat_history and len(self.chat_history[chat_id]) > 0:
+                # Возвращаем список с одним элементом, чтобы показать что диалог был
+                return [{"message": "bot_was_here", "is_bot": True}]
+            return []
         except Exception as e:
             logging.error(f"Error getting recent bot messages: {e}")
             return []
