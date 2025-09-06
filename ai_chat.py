@@ -24,10 +24,15 @@ class YandexGPT:
         """
         Определяет, должен ли AI ответить на сообщение
         """
-        message_lower = message_text.lower()
+        message_lower = message_text.lower().strip()
         
-        # Прямые обращения к боту
-        bot_mentions = ["бот", "ai", "ии", "помощник", "ассистент", "гриша"]
+        # Игнорируем простые вызовы по имени (они обрабатываются в generate_response)
+        simple_name_calls = ["гриша", "бот"]
+        if message_lower in simple_name_calls:
+            return False
+        
+        # Прямые обращения к боту (но не простые вызовы)
+        bot_mentions = ["ai", "ии", "помощник", "ассистент"]
         if any(mention in message_lower for mention in bot_mentions):
             return True
             
