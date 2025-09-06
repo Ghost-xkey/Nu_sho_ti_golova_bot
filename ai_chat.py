@@ -256,7 +256,8 @@ class YandexGPT:
             is_meme_request = is_explicit_meme or is_auto_meme
             
             # Случайные мемы (5% вероятность на обычные сообщения)
-            if not is_meme_request and random.random() < 0.05:
+            # Но только если сообщение не является простым ответом
+            if not is_meme_request and not is_simple_response and random.random() < 0.05:
                 is_meme_request = True
             
             # Дополнительная логика: продолжаем диалог если бот недавно отвечал
