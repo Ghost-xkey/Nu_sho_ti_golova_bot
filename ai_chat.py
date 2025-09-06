@@ -159,24 +159,24 @@ class YandexGPT:
                 "что делаешь", "планы", "выходные", "отпуск", "каникулы"
             ]
             
-        # Проверяем явные запросы мемов
-        is_explicit_meme = any(trigger in message_lower for trigger in meme_triggers)
-        
-        # Проверяем автоматические триггеры
-        is_auto_meme = any(trigger in message_lower for trigger in auto_meme_triggers)
-        
-        # Автоматические мемы с вероятностью 20%
-        if is_auto_meme and random.random() < 0.2:
-            is_auto_meme = True
-        else:
-            is_auto_meme = False
-        
-        # Определяем финальное решение
-        is_meme_request = is_explicit_meme or is_auto_meme
-        
-        # Случайные мемы (5% вероятность на обычные сообщения)
-        if not is_meme_request and random.random() < 0.05:
-            is_meme_request = True
+            # Проверяем явные запросы мемов
+            is_explicit_meme = any(trigger in message_lower for trigger in meme_triggers)
+            
+            # Проверяем автоматические триггеры
+            is_auto_meme = any(trigger in message_lower for trigger in auto_meme_triggers)
+            
+            # Автоматические мемы с вероятностью 20%
+            if is_auto_meme and random.random() < 0.2:
+                is_auto_meme = True
+            else:
+                is_auto_meme = False
+            
+            # Определяем финальное решение
+            is_meme_request = is_explicit_meme or is_auto_meme
+            
+            # Случайные мемы (5% вероятность на обычные сообщения)
+            if not is_meme_request and random.random() < 0.05:
+                is_meme_request = True
             
             # Формируем промпт
             profanity_clause = "Умеренная крепкая лексика допустима, без оскорблений по признакам, угроз и явного NSFW." if ALLOW_PROFANITY else "Без мата."
