@@ -165,12 +165,8 @@ class YandexGPT:
             # Проверяем автоматические триггеры
             is_auto_meme = any(trigger in message_lower for trigger in auto_meme_triggers)
             
-            # Если это вопрос с восклицательным знаком - больше шансов на мем
-            is_question = "?" in message_text
-            is_exclamation = "!" in message_text
-            
             # Определяем финальное решение
-            is_meme_request = is_explicit_meme or (is_auto_meme and (is_question or is_exclamation))
+            is_meme_request = is_explicit_meme or is_auto_meme
             
             # Случайные мемы (5% вероятность на обычные сообщения)
             if not is_meme_request and random.random() < 0.05:
