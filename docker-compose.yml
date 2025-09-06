@@ -7,6 +7,9 @@ services:
       - TOKEN=${TOKEN}
       - CHAT_ID=${CHAT_ID}
       - DB_PATH=${DB_PATH:-bot_database.db}
+      - YANDEX_API_KEY=${YANDEX_API_KEY}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
+      - HUGGINGFACE_API_TOKEN=${HUGGINGFACE_API_TOKEN}
     volumes:
       - ./data:/app/data
     networks:
