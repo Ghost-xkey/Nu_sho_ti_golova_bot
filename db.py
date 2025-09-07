@@ -88,6 +88,14 @@ def create_tables():
             photo_file_id TEXT,
             is_active BOOLEAN DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+
+        # Предпочтения пользователей
+        cursor.execute('''CREATE TABLE IF NOT EXISTS user_prefs (
+            user_id INTEGER PRIMARY KEY,
+            preferred_name TEXT,
+            favorite_genres TEXT,
+            no_swear INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         
         conn.commit()
         print("Tables created successfully")
@@ -106,6 +114,13 @@ def create_tables():
             print("yearly_events table exists")
         else:
             print("ERROR: yearly_events table not found!")
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_prefs'")
+        result = cursor.fetchone()
+        if result:
+            print("user_prefs table exists")
+        else:
+            print("ERROR: user_prefs table not found!")
             
     except Exception as e:
         print(f"Error creating tables: {e}")
@@ -336,6 +351,63 @@ def get_total_users():
     finally:
         conn.close()
 
+def get_user_prefs(user_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT user_id, preferred_name, favorite_genres, no_swear FROM user_prefs WHERE user_id = ?', (user_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return {
+            'user_id': row[0],
+            'preferred_name': row[1],
+            'favorite_genres': row[2],
+            'no_swear': bool(row[3])
+        }
+    except Exception as e:
+        print(f"Error getting user prefs: {e}")
+        return None
+    finally:
+        conn.close()
+
+def upsert_user_prefs(user_id: int, preferred_name: str = None, favorite_genres: str = None, no_swear: bool = None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT 1 FROM user_prefs WHERE user_id = ?', (user_id,))
+        exists = cursor.fetchone() is not None
+        if not exists:
+            cursor.execute('INSERT INTO user_prefs (user_id, preferred_name, favorite_genres, no_swear) VALUES (?,?,?,?)', (
+                user_id,
+                preferred_name,
+                favorite_genres,
+                1 if no_swear else 0 if no_swear is not None else 0
+            ))
+        else:
+            fields = []
+            values = []
+            if preferred_name is not None:
+                fields.append('preferred_name = ?')
+                values.append(preferred_name)
+            if favorite_genres is not None:
+                fields.append('favorite_genres = ?')
+                values.append(favorite_genres)
+            if no_swear is not None:
+                fields.append('no_swear = ?')
+                values.append(1 if no_swear else 0)
+            if fields:
+                fields.append('updated_at = CURRENT_TIMESTAMP')
+                sql = f"UPDATE user_prefs SET {', '.join(fields)} WHERE user_id = ?"
+                values.append(user_id)
+                cursor.execute(sql, tuple(values))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error upserting user prefs: {e}")
+        return False
+    finally:
+        conn.close()
 def init_default_users():
     """Инициализирует пользователей по умолчанию"""
     conn = get_db_connection()

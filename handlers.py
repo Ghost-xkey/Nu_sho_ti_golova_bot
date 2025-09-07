@@ -1407,6 +1407,26 @@ async def handle_ai_message(message: types.Message):
         if yandex_ai.should_respond(message.text, chat_id):
             logging.info(f"AI responding to message from {username}: {message.text[:50]}...")
             
+            # Детект предпочтений (простейшие шаблоны)
+            try:
+                from db import upsert_user_prefs
+                text_l = (message.text or "").lower()
+                uid = message.from_user.id
+                # "зови меня <имя>"
+                import re
+                m = re.search(r"зови\s+меня\s+([\wА-Яа-яЁё\- ]{2,32})", message.text or "")
+                if m:
+                    upsert_user_prefs(uid, preferred_name=m.group(1).strip())
+                # "люблю <жанр>(, жанр2)"
+                m2 = re.search(r"люблю\s+([\wА-Яа-ящЁё ,]+)", message.text or "")
+                if m2:
+                    upsert_user_prefs(uid, favorite_genres=m2.group(1).strip())
+                # "без мата" / "не ругайся"
+                if any(p in text_l for p in ["без мата", "не ругайся", "не матерись", "без мата, пожалуйста"]):
+                    upsert_user_prefs(uid, no_swear=True)
+            except Exception as e:
+                logging.error(f"Pref detection error: {e}")
+
             # Генерируем ответ
             ai_response = yandex_ai.generate_response(message.text, chat_id, username)
             

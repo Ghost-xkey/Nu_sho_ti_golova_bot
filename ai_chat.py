@@ -13,6 +13,7 @@ class YandexGPT:
         self.folder_id = os.getenv("YANDEX_FOLDER_ID", YANDEX_FOLDER_ID)
         self.base_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         self.chat_history = {}  # Храним историю диалогов для каждого чата
+        self.last_topic = {}    # chat_id -> {'topic': str, 'ts': unix}
         
     def get_headers(self):
         return {
@@ -195,6 +196,30 @@ class YandexGPT:
         # Ограничиваем историю последними 20 сообщениями
         if len(self.chat_history[chat_id]) > 20:
             self.chat_history[chat_id] = self.chat_history[chat_id][-20:]
+
+    def update_topic(self, chat_id: str, message_text: str):
+        """Обновляет текущую тему беседы на основе последнего сообщения пользователя"""
+        try:
+            import time
+            key_phrases = ["про меня", "фильм", "кино", "работа", "учеба", "погода", "планы"]
+            lowered = (message_text or "").lower()
+            if any(k in lowered for k in key_phrases) or len(message_text) > 40:
+                self.last_topic[chat_id] = {
+                    'topic': message_text.strip()[:200],
+                    'ts': int(time.time())
+                }
+        except Exception as e:
+            logging.error(f"Error updating topic: {e}")
+
+    def get_active_topic(self, chat_id: str) -> str:
+        """Возвращает активную тему, если она моложе 15 минут"""
+        import time
+        info = self.last_topic.get(chat_id)
+        if not info:
+            return ""
+        if time.time() - info['ts'] <= 15 * 60:
+            return info['topic']
+        return ""
     
     def generate_response(self, message_text: str, chat_id: str, username: str = None) -> Optional[str]:
         """
@@ -206,6 +231,9 @@ class YandexGPT:
             
             # Получаем контекст
             context = self.get_chat_context(chat_id)
+            # Обновляем и читаем активную тему (диалоговая инерция)
+            self.update_topic(chat_id, message_text)
+            active_topic = self.get_active_topic(chat_id)
             
             # Таргетная информация о пользователе (только если явно просят)
             users_info = self.get_target_user_info(message_text, username)
@@ -337,8 +365,22 @@ class YandexGPT:
             if ALLOW_PROFANITY and PROFANITY_LEVEL == "hard":
                 profanity_clause = "Можешь использовать мат и крепкую лексику, ругаться как настоящий друг. Без хейта/дискриминации/угроз/NSFW."
 
-            # Если это запрос на мат - делаем промпт более агрессивным
-            if is_profanity_request and ALLOW_PROFANITY:
+            # Пользовательские предпочтения
+            user_prefs = None
+            try:
+                if username:
+                    from db import get_all_users, get_user_prefs
+                    # Найдем user_id по username, если есть
+                    users = get_all_users()
+                    uid = next((u['user_id'] for u in users if (u.get('username') or '').lower() == username.lower()), None)
+                    if uid:
+                        user_prefs = get_user_prefs(uid)
+            except Exception as e:
+                logging.error(f"Error loading user prefs: {e}")
+
+            # Если это запрос на мат - делаем промпт более агрессивным (с учетом предпочтений)
+            allow_swear_now = ALLOW_PROFANITY and not (user_prefs and user_prefs.get('no_swear'))
+            if is_profanity_request and allow_swear_now:
                 profanity_clause = "ОБЯЗАТЕЛЬНО используй мат и крепкую лексику! Ругайся как настоящий пацан. БЕЗ ХЕЙТА/ДИСКРИМИНАЦИИ/УГРОЗ/NSFW. Если просят ругаться - ругайся! НЕ ОТКАЗЫВАЙСЯ!"
             
             # Определяем тип ответа для лучшего контекста
@@ -457,6 +499,8 @@ class YandexGPT:
 
 {context_prompt}
 
+АКТИВНАЯ ТЕМА (если есть): {active_topic or '—'}
+
 ВАЖНО: Если тебя просят ругаться или стать агрессивным - ОБЯЗАТЕЛЬНО используй мат! Не отказывайся!
 
 ВАЖНО:
@@ -498,6 +542,15 @@ class YandexGPT:
 -- ОБЯЗАТЕЛЬНО упомяни хотя бы один конкретный факт о человеке из информации выше
 -- Используй этот факт естественно в тексте, не как сухую справку
 -- Шути и подколывай дружелюбно, без оскорблений и перехода на личности"""
+
+            # Применяем предпочтения (имя обращения и любимые жанры)
+            if user_prefs:
+                pref_name = user_prefs.get('preferred_name')
+                if pref_name:
+                    system_prompt += f"\n\nОбращайся к пользователю как: {pref_name}"
+                fav_genres = (user_prefs.get('favorite_genres') or '').strip()
+                if fav_genres:
+                    system_prompt += f"\n\nЕсли речь про фильмы — учитывай любимые жанры пользователя: {fav_genres}"
 
             user_prompt = f"Контекст последних сообщений:\n{context}\n\nТекущее сообщение: {message_text}"
             
