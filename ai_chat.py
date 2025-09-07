@@ -293,48 +293,8 @@ class YandexGPT:
                 
             should_auto_respond = should_engage and random.random() < engagement_probability
             
-            # Проверяем триггеры для мемов
-            meme_triggers = ["мем", "картинк", "фото", "изображен", "мемчик", "мемас"]
-            
-            # Автоматические триггеры для мемов (вопросы, ситуации)
-            auto_meme_triggers = [
-                # Вопросы про участников
-                "кто такой", "что делает", "где", "как дела", "как поживаешь",
-                # Эмоциональные ситуации  
-                "скучно", "грустно", "устал", "плохо", "отлично", "круто", "весело",
-                "праздник", "день рождения", "поздравляю", "счастья",
-                # Жалобы и проблемы
-                "проблема", "беда", "не работает", "сломалось", "не получается",
-                # Вопросы про работу/учебу
-                "работа", "учеба", "экзамен", "зачет", "проект", "дедлайн",
-                # Еда и развлечения
-                "голоден", "еда", "ресторан", "кафе", "пицца", "кофе", "чай",
-                "игра", "фильм", "сериал", "музыка", "концерт",
-                # Погода и природа
-                "погода", "дождь", "снег", "солнце", "жара", "холод",
-                # Вопросы про планы
-                "что делаешь", "планы", "выходные", "отпуск", "каникулы"
-            ]
-            
-            # Проверяем явные запросы мемов
-            is_explicit_meme = any(trigger in message_lower for trigger in meme_triggers)
-            
-            # Проверяем автоматические триггеры
-            is_auto_meme = any(trigger in message_lower for trigger in auto_meme_triggers)
-            
-            # Автоматические мемы с вероятностью 20%
-            if is_auto_meme and random.random() < 0.2:
-                is_auto_meme = True
-            else:
-                is_auto_meme = False
-            
-            # Определяем финальное решение
-            is_meme_request = is_explicit_meme or is_auto_meme
-            
-            # Случайные мемы (5% вероятность на обычные сообщения)
-            # Но только если сообщение не является простым ответом
-            if not is_meme_request and not is_simple_response and random.random() < 0.05:
-                is_meme_request = True
+            # Мемы отключены
+            is_meme_request = False
             
             # Дополнительная логика: продолжаем диалог если бот недавно отвечал
             # Но только если сообщение не является простым ответом
@@ -528,8 +488,8 @@ class YandexGPT:
             if is_profanity_request and ALLOW_PROFANITY:
                 user_prompt += "\n\nВАЖНО: Пользователь просит тебя ругаться матом! ОБЯЗАТЕЛЬНО используй крепкую лексику в ответе!"
             
-            # Генерируем ответ только если нужно (мем, поддержка, общение или случайное включение)
-            if not (is_meme_request or should_auto_respond):
+            # Генерируем ответ только если нужно (поддержка, общение или случайное включение)
+            if not should_auto_respond:
                 return None
                 
             # Инициализируем переменную для рекомендаций фильмов
@@ -639,35 +599,6 @@ class YandexGPT:
                 
                 # Добавляем ответ в историю
                 self.add_to_history(chat_id, f"AI: {ai_response}")
-                
-                # Если это запрос на мем - генерируем мем
-                if is_meme_request:
-                    try:
-                        from meme_generator import meme_generator
-                        
-                        # Определяем тип мема для лучшего контекста
-                        meme_type = "general"
-                        if is_explicit_meme:
-                            meme_type = "explicit"
-                        elif any(word in message_lower for word in ["кто такой", "что делает"]):
-                            meme_type = "person"
-                        elif any(word in message_lower for word in ["скучно", "грустно", "устал"]):
-                            meme_type = "mood"
-                        elif any(word in message_lower for word in ["работа", "учеба", "проект"]):
-                            meme_type = "work"
-                        elif any(word in message_lower for word in ["еда", "голоден", "пицца"]):
-                            meme_type = "food"
-                        elif any(word in message_lower for word in ["погода", "дождь", "снег"]):
-                            meme_type = "weather"
-                        elif any(word in message_lower for word in ["игра", "фильм", "музыка"]):
-                            meme_type = "entertainment"
-                        
-                        meme_url = meme_generator.create_context_meme(message_text, users_info, meme_type)
-                        if meme_url:
-                            # Возвращаем специальный ответ с URL мема
-                            return f"MEME:{meme_url}:{ai_response}"
-                    except Exception as e:
-                        logging.error(f"Error generating meme: {e}")
                 
                 return ai_response
             else:

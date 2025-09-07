@@ -157,15 +157,16 @@ class MovieService:
                 description = description[:200] + "..."
                 
             # Формируем строку
-            info = f"🎬 **{name}**"
-            if name_en:
+            info = f"🎬 {name}"
+            if name_en and name_en != name:
                 info += f" ({name_en})"
             if year:
                 info += f" ({year})"
-            if rating:
+            if rating and rating > 0:
                 info += f" ⭐ {rating}"
                 
-            info += f"\n📝 {description}"
+            if description and description != "Описание отсутствует":
+                info += f"\n📝 {description}"
             
             if poster_url:
                 info += f"\n🖼️ {poster_url}"
