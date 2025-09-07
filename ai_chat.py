@@ -327,8 +327,8 @@ class YandexGPT:
                     should_auto_respond = True
                     response_type = "continue_conversation"
             
-            # Дополнительная логика: иногда включаемся в обычные разговоры (50% вероятность)
-            if not should_auto_respond and not is_meme_request and message_text.strip().lower() not in ["гриша", "бот"] and random.random() < 0.5:
+            # Дополнительная логика: иногда включаемся в обычные разговоры (30% вероятность)
+            if not should_auto_respond and not is_meme_request and message_text.strip().lower() not in ["гриша", "бот"] and random.random() < 0.3:
                 should_auto_respond = True
                 response_type = "casual_engagement"
             
