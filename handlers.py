@@ -1435,13 +1435,13 @@ async def handle_ai_message(message: types.Message):
                 await message.reply(ai_response)
                 logging.info(f"AI response sent: {ai_response[:50]}...")
             else:
-                # Fallback - случайный комментарий
+                # Умный фоллбэк: детальный и по теме
                 message_lower = message.text.lower()
                 profanity_triggers = ["мат", "ругайся", "выругайся", "крепко", "плохие слова", "нецензурно", "агрессивный", "достать", "рассмеши"]
                 is_profanity_request = any(trigger in message_lower for trigger in profanity_triggers)
-                fallback_response = yandex_ai.get_random_comment(is_profanity_request)
+                fallback_response = yandex_ai.get_smart_fallback(chat_id, message.text, username, is_profanity_request)
                 await message.reply(fallback_response)
-                logging.info(f"AI fallback response sent: {fallback_response}")
+                logging.info(f"AI smart fallback sent: {fallback_response[:80]}...")
                 
     except Exception as e:
         logging.error(f"Error in AI message handler: {e}")

@@ -751,5 +751,51 @@ class YandexGPT:
         ]
         return random.choice(comments)
 
+    def get_smart_fallback(self, chat_id: str, message_text: str, username: str = None, is_profanity_request: bool = False) -> str:
+        """Детальный фоллбэк-ответ (20–40 слов), учитывающий активную тему и предпочтения.
+        Не использует односложные фразы.
+        """
+        try:
+            active_topic = self.get_active_topic(chat_id)
+            user_prefs = None
+            display_name = username or "друг"
+            # Подтянем префы по username
+            try:
+                if username:
+                    from db import get_all_users, get_user_prefs
+                    users = get_all_users()
+                    uid = next((u['user_id'] for u in users if (u.get('username') or '').lower() == username.lower()), None)
+                    if uid:
+                        user_prefs = get_user_prefs(uid)
+                        if user_prefs and user_prefs.get('preferred_name'):
+                            display_name = user_prefs['preferred_name']
+            except Exception as e:
+                logging.error(f"Smart fallback prefs error: {e}")
+
+            # Мат только если разрешено глобально и не запрещено префами
+            allow_swear_now = ALLOW_PROFANITY and not (user_prefs and user_prefs.get('no_swear'))
+
+            # Выберем тон
+            if is_profanity_request and allow_swear_now:
+                prefix = f"Старк, " if display_name.lower() == "старк" else f"{display_name}, "
+                base = (
+                    f"{prefix}окей, давай по делу. Ты спросил про это не просто так — давай развернуто. "
+                    f"{('Кстати, вы обсуждали: ' + active_topic[:120] + '. ') if active_topic else ''}"
+                    f"Скажи, чего именно ждёшь: совет, взгляд со стороны или идеи, как двинуться дальше?"
+                )
+                return base
+            else:
+                prefix = f"Старк, " if display_name.lower() == "старк" else f"{display_name}, "
+                base = (
+                    f"{prefix}давай отвечу по сути и без банальностей. "
+                    f"{('Сейчас тема тянется к: ' + active_topic[:120] + '. ') if active_topic else ''}"
+                    f"Сформулируй, чего не хватает: фактов, альтернатив, или просто нормального плана на ближайшие шаги?"
+                )
+                return base
+        except Exception as e:
+            logging.error(f"Smart fallback error: {e}")
+            # На самый крайний случай — не односложный текст
+            return "Давай конкретнее: хочешь совет, разбор вариантов или просто нормальное мнение по теме?"
+
 # Глобальный экземпляр AI
 yandex_ai = YandexGPT()
