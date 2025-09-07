@@ -360,6 +360,14 @@ class YandexGPT:
                 should_auto_respond = True
                 response_type = "casual_engagement"
             
+            # УПРОЩЕННАЯ ЛОГИКА: если should_respond вернул True, то всегда генерируем ответ
+            # Это исправляет проблему с зацикливанием на фоллбэках
+            if not should_auto_respond and not is_meme_request:
+                # Проверяем базовую логику should_respond
+                if self.should_respond(message_text, chat_id):
+                    should_auto_respond = True
+                    response_type = "normal"
+            
             # Формируем промпт
             profanity_clause = "Умеренная крепкая лексика допустима, без оскорблений по признакам, угроз и явного NSFW." if ALLOW_PROFANITY else "Без мата."
             if ALLOW_PROFANITY and PROFANITY_LEVEL == "hard":
@@ -756,7 +764,6 @@ class YandexGPT:
         Не использует односложные фразы.
         """
         try:
-            active_topic = self.get_active_topic(chat_id)
             user_prefs = None
             display_name = username or "друг"
             # Подтянем префы по username
@@ -775,23 +782,29 @@ class YandexGPT:
             # Мат только если разрешено глобально и не запрещено префами
             allow_swear_now = ALLOW_PROFANITY and not (user_prefs and user_prefs.get('no_swear'))
 
-            # Выберем тон
+            # Разнообразные фоллбэк-ответы в зависимости от типа сообщения
+            message_lower = message_text.lower()
+            
+            # Если это вопрос о пользователе
+            if any(phrase in message_lower for phrase in ["расскажи обо мне", "расскажи про меня", "кто я", "что ты знаешь"]):
+                return f"{display_name}, ты у нас интересный персонаж! Но конкретно что хочешь узнать — про твои увлечения, характер или что-то другое?"
+            
+            # Если это обращение к боту
+            if any(phrase in message_lower for phrase in ["бот", "гриша", "ты че", "отупел"]):
+                return f"{display_name}, я тут, не переживай! Просто иногда нужно время подумать. О чём конкретно хочешь поговорить?"
+            
+            # Если это просьба о фактах
+            if "факт" in message_lower:
+                return f"{display_name}, фактов у меня много, но нужно уточнить — про что именно? Про технологии, медицину, или что-то другое?"
+            
+            # Обычный фоллбэк
             if is_profanity_request and allow_swear_now:
                 prefix = f"Старк, " if display_name.lower() == "старк" else f"{display_name}, "
-                base = (
-                    f"{prefix}окей, давай по делу. Ты спросил про это не просто так — давай развернуто. "
-                    f"{('Кстати, вы обсуждали: ' + active_topic[:120] + '. ') if active_topic else ''}"
-                    f"Скажи, чего именно ждёшь: совет, взгляд со стороны или идеи, как двинуться дальше?"
-                )
-                return base
+                return f"{prefix}окей, давай по делу. Ты спросил про это не просто так — давай развернуто. Скажи, чего именно ждёшь: совет, взгляд со стороны или идеи, как двинуться дальше?"
             else:
                 prefix = f"Старк, " if display_name.lower() == "старк" else f"{display_name}, "
-                base = (
-                    f"{prefix}давай отвечу по сути и без банальностей. "
-                    f"{('Сейчас тема тянется к: ' + active_topic[:120] + '. ') if active_topic else ''}"
-                    f"Сформулируй, чего не хватает: фактов, альтернатив, или просто нормального плана на ближайшие шаги?"
-                )
-                return base
+                return f"{prefix}давай отвечу по сути и без банальностей. Сформулируй, чего не хватает: фактов, альтернатив, или просто нормального плана на ближайшие шаги?"
+                
         except Exception as e:
             logging.error(f"Smart fallback error: {e}")
             # На самый крайний случай — не односложный текст
