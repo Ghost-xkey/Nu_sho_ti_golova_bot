@@ -92,41 +92,63 @@ class YandexGPT:
         context = "\n".join([f"Пользователь: {msg}" for msg in recent_messages])
         return context
     
-    def get_users_info(self, chat_id: str) -> str:
-        """
-        Получает один случайный факт об участниках чата для персонализации ответов
+    def get_target_user_info(self, message_text: str, author_username: Optional[str]) -> str:
+        """Возвращает один факт строго о целевом пользователе:
+        - если в сообщении есть @username — используем его
+        - если запрос "про меня" — используем автора сообщения
+        - в остальных случаях возвращаем пустую строку (не подмешиваем чужие факты)
         """
         try:
+            import re
             from db import get_all_users
-            import random
+            
+            text = (message_text or "").lower()
+            target_username = None
+            
+            # 1) Явное упоминание @username
+            mention = re.search(r"@(\w+)", message_text or "")
+            if mention:
+                target_username = mention.group(1)
+            # 2) Запрос "про меня" — берём автора
+            elif any(phrase in text for phrase in [
+                "про меня", "расскажи про меня", "скажи про меня", "что ты знаешь обо мне",
+                "что знаешь про меня", "расскажи обо мне"
+            ]):
+                if author_username:
+                    # author_username приходит без @ из handlers
+                    target_username = author_username.lstrip('@')
+            
+            if not target_username:
+                return ""
             
             users = get_all_users()
             if not users:
                 return ""
             
-            # Выбираем случайного пользователя
-            user = random.choice(users)
+            # Ищем точное совпадение username
+            user = next((u for u in users if (u.get('username') or "").lower() == target_username.lower()), None)
+            if not user:
+                return ""
             
-            username = f"@{user['username']}" if user['username'] else "без username"
-            nickname = user['nickname'] or "никнейм не указан"
-            description = user['description'] or "описание не указано"
-            traits = user['traits'] or "черты не указаны"
-            jokes_about = user['jokes_about'] or "шутки не указаны"
+            nickname = user.get('nickname') or "никнейм не указан"
+            description = user.get('description') or "описание не указано"
+            traits = user.get('traits') or "черты не указаны"
+            jokes_about = user.get('jokes_about') or "шутки не указаны"
             
-            # Выбираем один случайный факт из доступных
+            # Формируем один факт о конкретном пользователе
             facts = [
-                f"{username} ({nickname}) - {description}",
+                f"{nickname} - {description}",
                 f"{nickname} известен тем, что: {traits}",
                 f"Про {nickname} можно пошутить: {jokes_about}"
             ]
-            
-            # Случайно выбираем один факт
-            selected_fact = random.choice(facts)
-            
-            return f"Информация об участнике чата: {selected_fact}"
-            
+            # Выбираем первый информативный факт (приоритет: описание → черты → шутки)
+            for fact in facts:
+                if not any(x in fact for x in ["не указан", "не указано"]):
+                    return f"Информация об участнике чата ({target_username}): {fact}"
+            # Если все пустые — не подмешиваем
+            return ""
         except Exception as e:
-            logging.error(f"Error getting users info: {e}")
+            logging.error(f"Error getting targeted user info: {e}")
             return ""
     
     def get_recent_bot_messages(self, chat_id: str, limit: int = 3) -> list:
@@ -185,8 +207,8 @@ class YandexGPT:
             # Получаем контекст
             context = self.get_chat_context(chat_id)
             
-            # Получаем информацию о пользователях
-            users_info = self.get_users_info(chat_id)
+            # Таргетная информация о пользователе (только если явно просят)
+            users_info = self.get_target_user_info(message_text, username)
             
             # Проверяем триггеры мата
             message_lower = message_text.lower()
@@ -469,15 +491,13 @@ class YandexGPT:
 
 Будь как настоящий друг - иногда токсичный, иногда поддерживающий, любишь черный юмор, но всегда в своем стиле."""
 
-            # Добавляем информацию о пользователях если есть
+            # Добавляем таргетную информацию о пользователе если есть
             if users_info:
                 system_prompt += f"\n\n{users_info}"
                 system_prompt += """
-- Можешь шутить про участников чата, используя информацию о них
-- Подкалывать за их черты характера или особенности  
-- Делать персонализированные шутки
-- Но не переходи на личности - все в дружеском ключе
-- Используй их никнеймы и особенности для шуток"""
+-- ОБЯЗАТЕЛЬНО упомяни хотя бы один конкретный факт о человеке из информации выше
+-- Используй этот факт естественно в тексте, не как сухую справку
+-- Шути и подколывай дружелюбно, без оскорблений и перехода на личности"""
 
             user_prompt = f"Контекст последних сообщений:\n{context}\n\nТекущее сообщение: {message_text}"
             
