@@ -11,6 +11,7 @@ services:
       - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
       # HUGGINGFACE_API_TOKEN removed (memes disabled)
       - KINOPOISK_API_TOKEN=${KINOPOISK_API_TOKEN}
+      - SKIP_UPDATES=${SKIP_UPDATES:-true}
     volumes:
       - ./data:/app/data
     networks:
