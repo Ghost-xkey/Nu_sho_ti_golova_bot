@@ -9,10 +9,14 @@ from db import create_tables
 from middlewares import ExampleMiddleware
 
 import logging
+from aiohttp import ClientSession, ClientTimeout
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TOKEN)
+# Настраиваем HTTP-клиент с укороченными таймаутами,
+timeout = ClientTimeout(total=30, connect=10)
+session = ClientSession(timeout=timeout)
+bot = Bot(token=TOKEN, session=session)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
@@ -118,11 +122,12 @@ if __name__ == "__main__":
         
         # Запускаем бота с обработкой ошибок
         try:
-            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown)
+            # Короткий polling_timeout помогает на нестабильной сети
+            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
         except Exception as e:
             logging.error(f"Ошибка при запуске бота: {e}")
             # Перезапускаем через 5 секунд
             await asyncio.sleep(5)
-            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown)
+            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
     
     asyncio.run(main())
