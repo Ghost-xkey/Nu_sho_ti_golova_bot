@@ -118,11 +118,11 @@ if __name__ == "__main__":
         
         # Запускаем бота с обработкой ошибок
         try:
-            await dp.start_polling(bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
+            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown)
         except Exception as e:
             logging.error(f"Ошибка при запуске бота: {e}")
             # Перезапускаем через 5 секунд
             await asyncio.sleep(5)
-            await dp.start_polling(bot, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
+            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown)
     
     asyncio.run(main())
