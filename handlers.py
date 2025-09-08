@@ -730,9 +730,13 @@ async def handle_video(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video message received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео из целевого чата (с учетом возможного минуса)
-        from config import SOURCE_CHAT_ID
-        if chat_id in [SOURCE_CHAT_ID, f"-{SOURCE_CHAT_ID}"]:
+        # Сохраняем видео из целевых чатов (с учетом возможного минуса)
+        from config import SOURCE_CHAT_IDS
+        source_chats = []
+        for source_id in SOURCE_CHAT_IDS:
+            source_chats.extend([source_id, f"-{source_id}"])
+        
+        if chat_id in source_chats:
             video = message.video
             user = message.from_user
             
@@ -753,7 +757,7 @@ async def handle_video(message: types.Message):
             else:
                 logging.error(f"Failed to save video from user {user.id}: {video.file_id}")
         else:
-            logging.info(f"Video from chat {chat_id} ignored (not target chat 887092139)")
+            logging.info(f"Video from chat {chat_id} ignored (not in source chats {SOURCE_CHAT_IDS})")
             
     except Exception as e:
         logging.error(f"Error handling video: {e}")
@@ -766,9 +770,13 @@ async def handle_video_note(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video note received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео из целевого чата (с учетом возможного минуса)
-        from config import SOURCE_CHAT_ID
-        if chat_id in [SOURCE_CHAT_ID, f"-{SOURCE_CHAT_ID}"]:
+        # Сохраняем видео из целевых чатов (с учетом возможного минуса)
+        from config import SOURCE_CHAT_IDS
+        source_chats = []
+        for source_id in SOURCE_CHAT_IDS:
+            source_chats.extend([source_id, f"-{source_id}"])
+        
+        if chat_id in source_chats:
             video_note = message.video_note
             user = message.from_user
             
@@ -789,7 +797,7 @@ async def handle_video_note(message: types.Message):
             else:
                 logging.error(f"Failed to save video note from user {user.id}: {video_note.file_id}")
         else:
-            logging.info(f"Video note from chat {chat_id} ignored (not target chat 887092139)")
+            logging.info(f"Video note from chat {chat_id} ignored (not in source chats {SOURCE_CHAT_IDS})")
             
     except Exception as e:
         logging.error(f"Error handling video note: {e}")
