@@ -14,10 +14,6 @@ import os
 
 logging.basicConfig(level=logging.INFO)
 
-# Настраиваем HTTP-клиент с укороченными таймаутами,
-timeout = ClientTimeout(total=30, connect=10)
-session = ClientSession(timeout=timeout)
-bot = Bot(token=TOKEN, session=session)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
@@ -103,6 +99,11 @@ async def on_shutdown(dispatcher):
         logging.info("Shutting down bot")
         scheduler.shutdown()
         logging.info("Scheduler stopped")
+        # Корректно закрываем HTTP-сессию бота
+        try:
+            await bot.session.close()
+        except Exception as se:
+            logging.error(f"Error closing bot session: {se}")
     except Exception as e:
         logging.error(f"Error during shutdown: {e}")
 
@@ -121,6 +122,12 @@ if __name__ == "__main__":
         for job in jobs:
             logging.info(f"  - {job.name}: {job.trigger}")
         
+        # Создаем HTTP-сессию и бота в рамках активного event loop
+        global bot
+        timeout = ClientTimeout(total=30, connect=10)
+        session = ClientSession(timeout=timeout)
+        bot = Bot(token=TOKEN, session=session)
+
         # Запускаем бота с обработкой ошибок
         try:
             # Короткий polling_timeout помогает на нестабильной сети
