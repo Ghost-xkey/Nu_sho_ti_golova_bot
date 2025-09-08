@@ -9,27 +9,46 @@ def get_moscow_time():
     moscow_tz = pytz.timezone('Europe/Moscow')
     return datetime.datetime.now(moscow_tz)
 
-async def send_daily_message():
+async def send_daily_message(schedule_config=None):
+    """Отправляет ежедневное видео с настраиваемыми параметрами"""
     bot = Bot(token=TOKEN)
     try:
+        # Если передан конфиг - используем его, иначе старую логику
+        if schedule_config:
+            target_chat_id = schedule_config.get("chat_id", CHAT_ID)
+            message_template = schedule_config.get("message", "🎥 Давайте вспомним, как было круто?")
+            include_username = schedule_config.get("include_username", True)
+        else:
+            # Старая логика для совместимости
+            target_chat_id = CHAT_ID
+            message_template = "🎥 Давайте вспомним, как было круто?"
+            include_username = True
+        
         # Получаем случайное видео
         video_data = get_random_video()
         
         if video_data:
             file_id, file_unique_id, username, caption = video_data
-            message_text = f"🎥 Давайте вспомним, как было круто?\n\n📹 От: {username}"
+            
+            # Формируем сообщение
+            message_text = message_template
+            if include_username and username:
+                message_text += f"\n\n📹 От: {username}"
+            if caption and caption != "Видеосообщение-кружочек":
+                message_text += f"\n💬 {caption}"
             
             # Отправляем видео с подписью
             await bot.send_video(
-                chat_id=CHAT_ID,
+                chat_id=target_chat_id,
                 video=file_id,
                 caption=message_text
             )
-            print(f"Random video sent: {file_id}")
+            print(f"Random video sent to {target_chat_id}: {file_id}")
         else:
             # Если нет видео, отправляем обычное сообщение
-            await bot.send_message(chat_id=CHAT_ID, text="Охуенный блять совет на сегодня, братики!")
-            print("No videos available, sent regular message")
+            fallback_message = "Охуенный блять совет на сегодня, братики!" if not schedule_config else "Нет видео для отправки"
+            await bot.send_message(chat_id=target_chat_id, text=fallback_message)
+            print(f"No videos available, sent regular message to {target_chat_id}")
             
     except Exception as e:
         print(f"Error sending daily message: {e}")

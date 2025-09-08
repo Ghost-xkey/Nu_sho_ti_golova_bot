@@ -151,17 +151,18 @@ async def cmd_time(message: types.Message):
 async def cmd_test_daily_video(message: types.Message):
     """Тестовая команда для отправки ежедневного видео"""
     try:
-        from daily_sender import DailyVideoSender
-        from aiogram import Bot
-        from config import TOKEN
+        from utils import send_daily_message
+        from config import DAILY_VIDEO_SCHEDULES
         
-        bot = Bot(token=TOKEN)
-        sender = DailyVideoSender(bot)
-        
-        await sender.send_daily_video()
-        await message.answer("✅ Тестовое ежедневное видео отправлено!")
-        
-        await bot.session.close()
+        # Тестируем первую конфигурацию
+        if DAILY_VIDEO_SCHEDULES:
+            test_config = DAILY_VIDEO_SCHEDULES[0].copy()
+            test_config["chat_id"] = str(message.chat.id)  # Отправляем в текущий чат для теста
+            
+            await send_daily_message(test_config)
+            await message.answer("✅ Тестовое ежедневное видео отправлено!")
+        else:
+            await message.answer("❌ Нет настроенных расписаний для видео")
         
     except Exception as e:
         logging.error(f"Error in test daily video command: {e}")
@@ -729,8 +730,9 @@ async def handle_video(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video message received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео только из чата 887092139 (с учетом возможного минуса)
-        if chat_id in ["887092139", "-887092139"]:
+        # Сохраняем видео из целевого чата (с учетом возможного минуса)
+        from config import SOURCE_CHAT_ID
+        if chat_id in [SOURCE_CHAT_ID, f"-{SOURCE_CHAT_ID}"]:
             video = message.video
             user = message.from_user
             
@@ -764,8 +766,9 @@ async def handle_video_note(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video note received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео только из чата 887092139 (с учетом возможного минуса)
-        if chat_id in ["887092139", "-887092139"]:
+        # Сохраняем видео из целевого чата (с учетом возможного минуса)
+        from config import SOURCE_CHAT_ID
+        if chat_id in [SOURCE_CHAT_ID, f"-{SOURCE_CHAT_ID}"]:
             video_note = message.video_note
             user = message.from_user
             
