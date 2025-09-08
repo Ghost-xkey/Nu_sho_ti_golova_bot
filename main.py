@@ -10,6 +10,7 @@ from middlewares import ExampleMiddleware
 
 import logging
 from aiohttp import ClientSession, ClientTimeout
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -123,11 +124,13 @@ if __name__ == "__main__":
         # Запускаем бота с обработкой ошибок
         try:
             # Короткий polling_timeout помогает на нестабильной сети
-            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
+            skip = os.getenv("SKIP_UPDATES", "true").lower() == "true"
+            await dp.start_polling(bot, skip_updates=skip, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
         except Exception as e:
             logging.error(f"Ошибка при запуске бота: {e}")
             # Перезапускаем через 5 секунд
             await asyncio.sleep(5)
-            await dp.start_polling(bot, skip_updates=False, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
+            skip = os.getenv("SKIP_UPDATES", "true").lower() == "true"
+            await dp.start_polling(bot, skip_updates=skip, on_startup=on_startup, on_shutdown=on_shutdown, polling_timeout=10)
     
     asyncio.run(main())
