@@ -9,7 +9,6 @@ from db import create_tables
 from middlewares import ExampleMiddleware
 
 import logging
-from aiohttp import ClientSession, ClientTimeout
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -99,12 +98,6 @@ async def on_shutdown(dispatcher):
         logging.info("Shutting down bot")
         scheduler.shutdown()
         logging.info("Scheduler stopped")
-            # Корректно закрываем HTTP-сессию бота
-            try:
-                if hasattr(bot, 'session') and hasattr(bot.session, 'close'):
-                    await bot.session.close()
-            except Exception as se:
-                logging.error(f"Error closing bot session: {se}")
     except Exception as e:
         logging.error(f"Error during shutdown: {e}")
 
@@ -123,11 +116,9 @@ if __name__ == "__main__":
         for job in jobs:
             logging.info(f"  - {job.name}: {job.trigger}")
         
-        # Создаем HTTP-сессию и бота в рамках активного event loop
+        # Создаем бота без кастомной сессии (aiogram сам создаст)
         global bot
-        timeout = ClientTimeout(total=30, connect=10)
-        session = ClientSession(timeout=timeout)
-        bot = Bot(token=TOKEN, session=session)
+        bot = Bot(token=TOKEN)
 
         # Запускаем бота с обработкой ошибок
         try:
