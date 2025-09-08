@@ -9,7 +9,8 @@ from db import create_tables
 from middlewares import ExampleMiddleware
 
 import logging
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientTimeout
+from aiogram.client.session.aiohttp import AiohttpSession
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         # Создаем HTTP-сессию и бота в рамках активного event loop
         global bot
         timeout = ClientTimeout(total=30, connect=10)
-        session = ClientSession(timeout=timeout)
+        session = AiohttpSession(timeout=timeout)
         bot = Bot(token=TOKEN, session=session)
 
         # Запускаем бота с обработкой ошибок
