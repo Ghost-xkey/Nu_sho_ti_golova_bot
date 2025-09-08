@@ -147,6 +147,26 @@ async def cmd_time(message: types.Message):
         logging.error(f"Error in time command: {e}")
         await message.answer("❌ Ошибка при получении времени")
 
+@router.message(Command(commands=["test_daily_video"]))
+async def cmd_test_daily_video(message: types.Message):
+    """Тестовая команда для отправки ежедневного видео"""
+    try:
+        from daily_sender import DailyVideoSender
+        from aiogram import Bot
+        from config import TOKEN
+        
+        bot = Bot(token=TOKEN)
+        sender = DailyVideoSender(bot)
+        
+        await sender.send_daily_video()
+        await message.answer("✅ Тестовое ежедневное видео отправлено!")
+        
+        await bot.session.close()
+        
+    except Exception as e:
+        logging.error(f"Error in test daily video command: {e}")
+        await message.answer(f"❌ Ошибка: {e}")
+
 @router.message(Command(commands=["add_video"]))
 async def cmd_add_video(message: types.Message):
     """Добавляет видео вручную по file_id (для админов)"""
@@ -704,28 +724,34 @@ async def greet(message: types.Message):
 
 @router.message(lambda message: message.video is not None)
 async def handle_video(message: types.Message):
-    """Обрабатывает видеосообщения и сохраняет их в базу данных"""
+    """Обрабатывает видеосообщения и сохраняет их в базу данных только из чата 887092139"""
     try:
-        logging.info(f"Video message received from user {message.from_user.id}")
-        video = message.video
-        user = message.from_user
+        chat_id = str(message.chat.id)
+        logging.info(f"Video message received from user {message.from_user.id} in chat {chat_id}")
         
-        logging.info(f"Video details: file_id={video.file_id}, file_unique_id={video.file_unique_id}")
-        
-        # Сохраняем видеосообщение в базу данных
-        success = save_video_message(
-            file_id=video.file_id,
-            file_unique_id=video.file_unique_id,
-            message_id=message.message_id,
-            user_id=user.id,
-            username=user.username or user.first_name,
-            caption=message.caption
-        )
-        
-        if success:
-            logging.info(f"Video saved successfully from user {user.id}: {video.file_id}")
+        # Сохраняем видео только из чата 887092139
+        if chat_id == "887092139":
+            video = message.video
+            user = message.from_user
+            
+            logging.info(f"Video details: file_id={video.file_id}, file_unique_id={video.file_unique_id}")
+            
+            # Сохраняем видеосообщение в базу данных
+            success = save_video_message(
+                file_id=video.file_id,
+                file_unique_id=video.file_unique_id,
+                message_id=message.message_id,
+                user_id=user.id,
+                username=user.username or user.first_name,
+                caption=message.caption
+            )
+            
+            if success:
+                logging.info(f"Video saved successfully from user {user.id}: {video.file_id}")
+            else:
+                logging.error(f"Failed to save video from user {user.id}: {video.file_id}")
         else:
-            logging.error(f"Failed to save video from user {user.id}: {video.file_id}")
+            logging.info(f"Video from chat {chat_id} ignored (not target chat 887092139)")
             
     except Exception as e:
         logging.error(f"Error handling video: {e}")
@@ -733,28 +759,34 @@ async def handle_video(message: types.Message):
 
 @router.message(lambda message: message.video_note is not None)
 async def handle_video_note(message: types.Message):
-    """Обрабатывает видеосообщения-кружочки и сохраняет их в базу данных"""
+    """Обрабатывает видеосообщения-кружочки и сохраняет их в базу данных только из чата 887092139"""
     try:
-        logging.info(f"Video note received from user {message.from_user.id}")
-        video_note = message.video_note
-        user = message.from_user
+        chat_id = str(message.chat.id)
+        logging.info(f"Video note received from user {message.from_user.id} in chat {chat_id}")
         
-        logging.info(f"Video note details: file_id={video_note.file_id}, file_unique_id={video_note.file_unique_id}")
-        
-        # Сохраняем видеосообщение в базу данных
-        success = save_video_message(
-            file_id=video_note.file_id,
-            file_unique_id=video_note.file_unique_id,
-            message_id=message.message_id,
-            user_id=user.id,
-            username=user.username or user.first_name,
-            caption="Видеосообщение-кружочек"
-        )
-        
-        if success:
-            logging.info(f"Video note saved successfully from user {user.id}: {video_note.file_id}")
+        # Сохраняем видео только из чата 887092139
+        if chat_id == "887092139":
+            video_note = message.video_note
+            user = message.from_user
+            
+            logging.info(f"Video note details: file_id={video_note.file_id}, file_unique_id={video_note.file_unique_id}")
+            
+            # Сохраняем видеосообщение в базу данных
+            success = save_video_message(
+                file_id=video_note.file_id,
+                file_unique_id=video_note.file_unique_id,
+                message_id=message.message_id,
+                user_id=user.id,
+                username=user.username or user.first_name,
+                caption="Видеосообщение-кружочек"
+            )
+            
+            if success:
+                logging.info(f"Video note saved successfully from user {user.id}: {video_note.file_id}")
+            else:
+                logging.error(f"Failed to save video note from user {user.id}: {video_note.file_id}")
         else:
-            logging.error(f"Failed to save video note from user {user.id}: {video_note.file_id}")
+            logging.info(f"Video note from chat {chat_id} ignored (not target chat 887092139)")
             
     except Exception as e:
         logging.error(f"Error handling video note: {e}")

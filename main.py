@@ -2,11 +2,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.markdown import hbold
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from config import TOKEN, MEMORY_HOUR, MEMORY_MINUTE, YEARLY_DAY, YEARLY_MONTH, YEARLY_HOUR, YEARLY_MINUTE
+from config import TOKEN, MEMORY_HOUR, MEMORY_MINUTE, YEARLY_DAY, YEARLY_MONTH, YEARLY_HOUR, YEARLY_MINUTE, DAILY_VIDEO_HOUR, DAILY_VIDEO_MINUTE
 from handlers import router
 from utils import send_daily_message, send_yearly_message, check_and_send_yearly_events, check_and_send_yearly_events_sync, simple_test_function
 from db import create_tables
 from middlewares import ExampleMiddleware
+from daily_sender import DailyVideoSender
 
 import logging
 
@@ -21,8 +22,14 @@ dp.include_router(router)
 
 scheduler = AsyncIOScheduler()
 
+# Инициализируем отправитель ежедневных видео
+daily_video_sender = DailyVideoSender(bot)
+
 # Ежедневные воспоминания
 scheduler.add_job(send_daily_message, "cron", hour=MEMORY_HOUR, minute=MEMORY_MINUTE)
+
+# Ежедневная отправка видео
+scheduler.add_job(daily_video_sender.send_daily_video, "cron", hour=DAILY_VIDEO_HOUR, minute=DAILY_VIDEO_MINUTE)
 
 # Старое ежегодное сообщение (для совместимости)
 scheduler.add_job(send_yearly_message, "cron", month=YEARLY_MONTH, day=YEARLY_DAY, hour=YEARLY_HOUR, minute=YEARLY_MINUTE)
