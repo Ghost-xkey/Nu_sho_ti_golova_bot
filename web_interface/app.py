@@ -23,8 +23,8 @@ try:
     DATABASE_PATH = DB_PATH
 except ImportError as e:
     logging.error(f"Ошибка импорта модулей бота: {e}")
-    # Fallback для тестирования
-    DATABASE_PATH = "bot.db"
+    # Fallback для тестирования - правильный путь к базе данных
+    DATABASE_PATH = "/root/Nu_sho_ti_golova_bot/data/bot_database.db"
 
 app = Flask(__name__)
 app.secret_key = 'grisha_web_interface_secret_key_2024'
