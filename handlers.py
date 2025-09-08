@@ -729,8 +729,8 @@ async def handle_video(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video message received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео только из чата 887092139
-        if chat_id == "887092139":
+        # Сохраняем видео только из чата 887092139 (с учетом возможного минуса)
+        if chat_id in ["887092139", "-887092139"]:
             video = message.video
             user = message.from_user
             
@@ -764,8 +764,8 @@ async def handle_video_note(message: types.Message):
         chat_id = str(message.chat.id)
         logging.info(f"Video note received from user {message.from_user.id} in chat {chat_id}")
         
-        # Сохраняем видео только из чата 887092139
-        if chat_id == "887092139":
+        # Сохраняем видео только из чата 887092139 (с учетом возможного минуса)
+        if chat_id in ["887092139", "-887092139"]:
             video_note = message.video_note
             user = message.from_user
             
