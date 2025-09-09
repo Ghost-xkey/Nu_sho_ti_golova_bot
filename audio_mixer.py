@@ -162,16 +162,20 @@ class AudioMixer:
             # Настройки даккинга
             duck_settings = self.ducking_settings[ducking]
             
-            # Команда ffmpeg для микширования с даккингом
+            # Общая длительность: 7 секунд вступления + длительность голоса
+            total_duration = 7.0 + voice_duration
+            
+            # Команда ffmpeg для микширования с даккингом и задержкой голоса
             cmd = [
                 'ffmpeg', '-y',  # -y для перезаписи без подтверждения
                 '-i', voice_file,  # Входной голос
                 '-i', backing_file,  # Входная подложка
                 '-filter_complex', 
-                f'[0]loudnorm[voice];'  # Нормализация голоса
+                f'[0]adelay=7000|7000[voice_delayed];'  # Задержка голоса на 7 секунд
+                f'[voice_delayed]loudnorm[voice];'  # Нормализация голоса
                 f'[1]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'  # Подложка с громкостью и зацикливанием
                 f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'  # Даккинг
-                f'[voice][ducked]amix=inputs=2:duration=first:dropout_transition=0[out]',  # Микширование
+                f'[voice][ducked]amix=inputs=2:duration={total_duration}:dropout_transition=0[out]',  # Микширование с общей длительностью
                 '-map', '[out]',
                 '-c:a', 'libopus',  # Кодек Opus для Telegram
                 '-b:a', '64k',  # Битрейт
@@ -180,7 +184,7 @@ class AudioMixer:
                 str(output_file)
             ]
             
-            logger.info(f"Выполняем ffmpeg команду: {' '.join(cmd)}")
+            logger.info(f"Выполняем ffmpeg команду с задержкой голоса на 7 секунд: {' '.join(cmd)}")
             
             # Выполняем команду
             result = subprocess.run(
@@ -194,7 +198,7 @@ class AudioMixer:
                 logger.error(f"ffmpeg ошибка: {result.stderr}")
                 return None
             
-            logger.info(f"Аудио частушка создана: {output_file}")
+            logger.info(f"Аудио частушка создана с 7-секундным вступлением: {output_file}")
             return str(output_file)
             
         except subprocess.TimeoutExpired:
