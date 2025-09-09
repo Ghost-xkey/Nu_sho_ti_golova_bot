@@ -146,6 +146,133 @@ class GrishaPhotoCommenter:
     """Генератор токсичных комментариев Гриши для фотографий"""
     
     def __init__(self):
+        # Сценарные шаблоны (заточены под конкретные сюжеты)
+        self.scenario_templates = {
+            'fishing': [
+                "Рыбалка? А чем хвалиться — я вчера вдвое больше поймал",
+                "Снасти мощные, истории ещё мощнее",
+                "Поймал момент, а не рыбу — тоже результат",
+                "Удочка длинная, терпение — короче",
+                "Рассказ про улов уже весит больше самого улова"
+            ],
+            'male_group': [
+                "Класс, пацаны, как отдохнули без женщин",
+                "Мужской совет: решений ноль, уверенности тонна",
+                "Лица бодрые, планы сомнительные — идеальный вечер",
+                "Банда в сборе. Ответственный — никто",
+                "Тестостерон на максимум, дистанция до разума — побольше"
+            ],
+            'female_group': [
+                "Сияете. Остальным остаётся догонять",
+                "Глянец на фото, железобетон в характере",
+                "Собрались, чтобы мир немного напрягся",
+                "Красиво и слаженно — будто это легко",
+                "Фотогеничность 100%. Терпение окружающих — посмотрим"
+            ],
+            'mixed_group': [
+                "Микс настроений: кто смеётся — тот ещё не в теме",
+                "Состав разный, история общая. Фотографу — медаль",
+                "Смешали людей и ожидания — получилось как всегда",
+                "Кто-то уже пожалел, что пришёл. Но поздно",
+                "Команда разношёрстная, цель — как получится"
+            ],
+            'party': [
+                "Праздник идёт по плану: завтра будет больно смотреть в календарь",
+                "Веселитесь от души, счёт возьмёт завтра",
+                "Танцы включены, память — как повезёт",
+                "Музыка орёт, аргументы молчат"
+            ],
+            'alcohol': [
+                "Стекло звенит, аргументы падают — классика",
+                "Тосты крепнут, решения слабеют",
+                "Бутылки говорят убедительнее вас",
+                "Градусы растут, мудрость — на паузе"
+            ],
+            'wedding': [
+                "Свадьба: обещают навсегда, платят сегодня",
+                "Жених уверен, невеста светится — счёт плачет",
+                "Фото на века. Пусть хотя бы оно продержится",
+                "Красиво. Теперь к сложному — жить вместе"
+            ],
+            'gym': [
+                "Железо движется, эго растёт — держи баланс",
+                "Селфи в зале — половина тренировки. Вторая — лайки",
+                "Тяга серьёзная, техника спорная — но уважение есть",
+                "Гриф тяжелее самооценки — прогресс"
+            ],
+            'car': [
+                "Машина блестит. Владелец — ещё больше",
+                "Лошадей много, ответственности — как повезёт",
+                "Полируешь капот, а как насчёт характера?",
+                "Красиво. Только не разговаривай с ней чаще, чем с людьми"
+            ],
+            'beach': [
+                "Море спокойно, ты — нет. Честный кадр",
+                "Песок везде, идеи — где-то рядом",
+                "Пляж хорош, загар делает вид, что помогает",
+                "Шум волн заглушил внутренний голос — наконец-то"
+            ],
+            'kids': [
+                "Ребёнок тащит кадр, взрослые — статисты",
+                "Главный тут — он. Смиритесь",
+                "Взгляд серьёзный. У тебя такого не было даже на защите",
+                "Малой — 10/10. Остальные просто рядом"
+            ],
+            'dog': [
+                "Пёс красавец. Хозяин старается не мешать — и правильно",
+                "Верность в кадре. Остальное — как получится",
+                "Собака — 10/10. Человек — для масштаба",
+                "Хороший мальчик. Хозяин — попробуй дотянуться"
+            ],
+            'cat': [
+                "Кот смотрит, как на несдачу. И где-то прав",
+                "Кошка фотогенична, персонал — старается",
+                "Пушистый босс, люди — по углам",
+                "Властитель дивана разрешил кадр. Пользуйся"
+            ],
+            'food': [
+                "На тарелке праздник, на душе — диета",
+                "Выглядит вкусно. Жаль, лайки не насыщают",
+                "Композиция сильная, выдержка — у пояса",
+                "Еда топ, совесть — потом"
+            ],
+            'landmark': [
+                "Туристический чек-ин принят. Местные уже устали",
+                "Достопримечательность на месте. Чувство меры — в пути",
+                "Фото для ""я тут был"". Верим",
+                "Классика маршрута. Ставь галочку"
+            ],
+            'landscape': [
+                "Природа делает красиво, ты хотя бы не мешал",
+                "Свежий воздух — лучший фильтр",
+                "Вид сильный, мысли подтянутся",
+                "Тут и без тебя хорошо. Но ты попробовал"
+            ],
+            'text': [
+                "Надпись громкая, дела тихие",
+                "Текст уверенный. Выполнение — как обычно",
+                "Слова бодрые. Привычки — нет",
+                "Читается легко, живётся сложно"
+            ],
+            'selfie': [
+                "Лицо старается, харизма — в пути",
+                "Селфи бодрое, обаяние ещё грузится",
+                "Грим, фильтр, надежды — а получился ты",
+                "Портрет есть, портретности нет"
+            ],
+            'group': [
+                "Групповая стойка: улыбаемся, будто всё под контролем",
+                "Людей много, внимания мало — особенно к сути",
+                "Командой вы смелее, чем по одному",
+                "Единство ради кадра — уже неплохо"
+            ],
+            'default': [
+                "Кадр уверенный. Смысл подтянется",
+                "Снято небездарно. Дальше будет сложнее",
+                "Картинка дышит. Ты — попробуй тоже",
+                "Неплохо. Неожиданно честно"
+            ]
+        }
         # Наборы вариаций без эмодзи и без тех. деталей
         self.comment_variants = {
             'selfie': [
@@ -255,21 +382,22 @@ class GrishaPhotoCommenter:
         if not analysis:
             return "Не получилось понять, что на фото. Попробуй другое — и без ужасов, ладно"
         
-        # Вычисляем тип кадра и семя для вариативности
-        photo_type = self.determine_photo_type(analysis)
+        # Сначала пытаемся определить сценарии и говорить конкретнее
         seed = self._build_seed(analysis)
+        scenarios = self.detect_scenarios(analysis)
+        result = None
+        for sc in scenarios:
+            options = self.scenario_templates.get(sc)
+            if options:
+                result = self._pick_variant(options, seed, 71)
+                break
         
-        # Подбираем основу
-        base = self._pick_variant(self.comment_variants.get(photo_type) or self.comment_variants['default'], seed, 17)
-        
-        # Тонкие контекстные штрихи (без прямого раскрытия меток)
-        tail = self._build_tail(analysis, seed)
-        
-        # Склеиваем аккуратно, без лишних символов
-        result = base
-        if tail:
-            # Одна строка без лишних точек
-            result = f"{base}; {tail}"
+        # Фолбэк по типу (на случай нераспознанного сюжета)
+        if not result:
+            photo_type = self.determine_photo_type(analysis)
+            base_set = (self.comment_variants.get(photo_type)
+                        or self.comment_variants.get('default'))
+            result = self._pick_variant(base_set, seed, 17)
         
         # Фильтрация заезженных фраз
         banned = [
@@ -278,11 +406,14 @@ class GrishaPhotoCommenter:
             "Фильтры работают, а вот твоя логика - нет",
             "Текст есть, а смысла нет",
             "Текст на фото умнее тебя",
-            "Групповое фото - это когда все притворяются, что им весело"
+            "Групповое фото - это когда все притворяются, что им весело",
+            "в кадре деталей достаточно, осталось навести на смысл",
+            "на фото один герой, и ему бы отдохнуть",
+            "надпись уверенно делает вид, что так и задумано"
         ]
         lower = result.lower()
         if any(p.lower() in lower for p in banned):
-            alt = self._pick_variant(self.comment_variants.get('default'), seed, 911)
+            alt = self._pick_variant(self.scenario_templates.get('default') or self.comment_variants.get('default'), seed, 911)
             result = alt if alt else result
         return result
     
@@ -320,6 +451,90 @@ class GrishaPhotoCommenter:
             return 'text'
         
         return 'default'
+
+    def detect_scenarios(self, analysis: Dict[str, Any]) -> list:
+        """Возвращает список вероятных сценариев по приоритету."""
+        tokens = self._extract_tokens(analysis)
+        faces = len(analysis.get('faces') or [])
+        scenarios = []
+        add = scenarios.append
+
+        def has_any(words):
+            lw = [w.lower() for w in words]
+            return any(any(w in t for t in tokens) for w in lw)
+
+        # Рыбалка
+        if has_any(['fishing', 'fisherman', 'angling', 'fish', 'rod', 'recreational fishing', 'bait', 'hook', 'tackle', 'boat', 'river', 'lake']):
+            add('fishing')
+
+        # Группы
+        is_group = faces >= 3 or has_any(['group', 'crowd', 'team', 'squad'])
+        if is_group:
+            male = has_any(['man', 'men', 'male', 'boy', 'boys', 'gentleman', 'gentlemen'])
+            female = has_any(['woman', 'women', 'female', 'girl', 'girls', 'lady', 'ladies', 'bride'])
+            if male and not female:
+                add('male_group')
+            elif female and not male:
+                add('female_group')
+            else:
+                add('mixed_group')
+
+        # Свадьба / вечеринка / алкоголь
+        if has_any(['wedding', 'bride', 'groom', 'wedding dress', 'tuxedo', 'veil', 'bouquet', 'ceremony']):
+            add('wedding')
+        if has_any(['party', 'celebration', 'nightclub', 'festival', 'dance', 'birthday']):
+            add('party')
+        if has_any(['beer', 'wine', 'champagne', 'vodka', 'whiskey', 'brandy', 'bottle', 'glass', 'alcohol', 'bar', 'pub']):
+            add('alcohol')
+
+        # Бич / зал / авто
+        if has_any(['beach', 'sea', 'ocean', 'sand', 'shore', 'coast']):
+            add('beach')
+        if has_any(['gym', 'fitness', 'dumbbell', 'barbell', 'workout', 'weightlifting']):
+            add('gym')
+        if has_any(['car', 'vehicle', 'automobile', 'sports car', 'sedan', 'suv', 'supercar', 'motorcar']):
+            add('car')
+
+        # Дети / питомцы
+        if has_any(['baby', 'child', 'kid', 'toddler', 'newborn', 'infant']):
+            add('kids')
+        if has_any(['dog', 'puppy', 'canine']):
+            add('dog')
+        if has_any(['cat', 'kitten', 'feline']):
+            add('cat')
+
+        # Еда / достопримечательности / пейзаж / текст
+        if has_any(['food', 'meal', 'dish', 'cuisine', 'pizza', 'burger', 'sushi', 'salad', 'cake', 'dessert', 'coffee']):
+            add('food')
+        if has_any(['landmark', 'tower', 'cathedral', 'bridge', 'castle', 'monument', 'plaza', 'square', 'church']):
+            add('landmark')
+        if has_any(['landscape', 'mountain', 'forest', 'lake', 'river', 'sky', 'cloud', 'sunset', 'sunrise', 'tree', 'nature']):
+            add('landscape')
+        if analysis.get('text'):
+            add('text')
+
+        # Селфи / группа в конец, если не распознали специфики
+        if faces == 1:
+            add('selfie')
+        if is_group and all(s not in scenarios for s in ['male_group','female_group','mixed_group','group']):
+            add('group')
+
+        # Всегда завершаем default
+        add('default')
+        return scenarios
+
+    def _extract_tokens(self, analysis: Dict[str, Any]) -> list:
+        """Собирает токены из labels/objects для эвристик."""
+        tokens = []
+        for l in (analysis.get('labels') or [])[:15]:
+            d = (l.get('description') or '').lower()
+            if d:
+                tokens.append(d)
+        for o in (analysis.get('objects') or [])[:15]:
+            n = (o.get('name') or '').lower()
+            if n:
+                tokens.append(n)
+        return tokens
 
     def _build_seed(self, analysis: Dict[str, Any]) -> int:
         """Строит детерминированное семя на основе содержимого, чтобы разные фото давали разные фразы."""
