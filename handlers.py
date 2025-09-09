@@ -1733,7 +1733,7 @@ async def handle_photo(message: types.Message):
         
         # Генерируем комментарий Гриши
         commenter = GrishaPhotoCommenter()
-        comment = commenter.generate_comment(analysis)
+        comment = await commenter.generate_comment(analysis)
         
         # Отправляем результат
         await message.reply(f"📸 {comment}")
@@ -1758,7 +1758,7 @@ async def handle_image_document(message: types.Message):
         analysis = await analyzer.analyze_image(image_data.read())
         
         commenter = GrishaPhotoCommenter()
-        comment = commenter.generate_comment(analysis)
+        comment = await commenter.generate_comment(analysis)
         
         await message.reply(f"📸 {comment}")
     except Exception as e:
