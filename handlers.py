@@ -1424,6 +1424,13 @@ async def handle_voice_message(message: types.Message):
     except Exception as e:
         logging.error(f"Error processing voice message: {e}")
 
+# ТЕСТОВЫЙ обработчик фотографий (в самом начале)
+@router.message(F.photo)
+async def test_photo_handler(message: types.Message):
+    """ТЕСТОВЫЙ обработчик для диагностики"""
+    logging.error(f"🚨 ТЕСТОВЫЙ ОБРАБОТЧИК ФОТОГРАФИЙ СРАБОТАЛ! Chat: {message.chat.id}, User: {message.from_user.id}")
+    await message.reply("✅ ТЕСТОВЫЙ ОБРАБОТЧИК СРАБОТАЛ! Фото получено!")
+
 # AI-чат обработчик текстовых сообщений
 @router.message(lambda message: message.text is not None and message.photo is None and message.document is None and message.video is None and message.voice is None and message.video_note is None)
 async def handle_ai_message(message: types.Message):
