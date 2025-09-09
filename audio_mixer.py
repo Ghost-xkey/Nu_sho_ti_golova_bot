@@ -204,7 +204,7 @@ class AudioMixer:
                 '-i', backing_file,  # Входная подложка
                 '-filter_complex', 
                 f'[0]adelay=7000|7000[voice_delayed];'  # Задержка голоса на 7 секунд
-                f'[voice_delayed]loudnorm[voice];'  # Нормализация голоса
+                f'[voice_delayed]loudnorm,atempo=1.1[voice];'  # Нормализация + ускорение голоса 1.1x
                 f'[1]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'  # Подложка с громкостью и зацикливанием
                 f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'  # Даккинг
                 f'[voice][ducked]amix=inputs=2:dropout_transition=0[out]',  # Микширование без ограничения длительности
@@ -316,6 +316,7 @@ class AudioMixer:
             cmd = [
                 'ffmpeg', '-y',
                 '-i', voice_file,
+                '-filter:a', 'atempo=1.1',  # Ускоряем голос до 1.1x
                 '-c:a', 'libopus',
                 '-b:a', '64k',
                 '-ar', '48000',
