@@ -76,10 +76,22 @@ class AudioMixer:
             logger.info(f"Создаем частушку: текст={text[:50]}..., подложка={backing_type}, даккинг={ducking}")
             
             # 1. Генерируем TTS
-            voice_file = self._generate_tts(text)
-            if not voice_file:
-                logger.error("Не удалось сгенерировать TTS")
-                return None
+            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            voice_file_1 = None
+            voice_file_2 = None
+            if len(lines) >= 4:
+                first_part = "\n".join(lines[:2])
+                second_part = "\n".join(lines[2:4])
+                voice_file_1 = self._generate_tts(first_part)
+                voice_file_2 = self._generate_tts(second_part)
+                if not voice_file_1 or not voice_file_2:
+                    logger.error("Не удалось сгенерировать TTS для одной из частей")
+                    return None
+            else:
+                voice_file_1 = self._generate_tts(text)
+                if not voice_file_1:
+                    logger.error("Не удалось сгенерировать TTS")
+                    return None
             
             # 2. Получаем подложку
             backing_file = self._get_backing_track(backing_type)
@@ -88,10 +100,13 @@ class AudioMixer:
                 return None
             
             # 3. Создаем финальный микс
-            output_file = self._mix_audio(voice_file, backing_file, ducking, backing_volume)
+            output_file = self._mix_audio(voice_file_1, backing_file, ducking, backing_volume, voice2_file=voice_file_2)
             
             # 4. Очищаем временные файлы
-            self._cleanup_temp_files([voice_file])
+            cleanup = [voice_file_1]
+            if voice_file_2:
+                cleanup.append(voice_file_2)
+            self._cleanup_temp_files(cleanup)
             
             return output_file
             
@@ -179,17 +194,17 @@ class AudioMixer:
         voice_file: str, 
         backing_file: str, 
         ducking: str, 
-        backing_volume: int
+        backing_volume: int,
+        voice2_file: Optional[str] = None
     ) -> Optional[str]:
         """Смешивает голос с подложкой используя ffmpeg"""
         try:
             output_file = self.temp_dir / f"chastushka_{random.randint(1000, 9999)}.ogg"
             
-            # Получаем длительность голоса
+            # Получаем длительность голоса (для логов/диагностики)
             voice_duration = self._get_audio_duration(voice_file)
             if not voice_duration:
-                logger.error("Не удалось получить длительность голоса")
-                return None
+                logger.warning("Не удалось получить длительность голоса (продолжаем)")
             
             # Настройки даккинга
             duck_settings = self.ducking_settings[ducking]
@@ -198,24 +213,50 @@ class AudioMixer:
             total_duration = 21.0
             
             # Команда ffmpeg для микширования с даккингом, задержкой голоса и фиксированной длительностью
-            cmd = [
-                'ffmpeg', '-y',  # -y для перезаписи без подтверждения
-                '-i', voice_file,  # Входной голос
-                '-i', backing_file,  # Входная подложка
-                '-filter_complex', 
-                f'[0]adelay=7000|7000[voice_delayed];'  # Задержка голоса на 7 секунд
-                f'[voice_delayed]loudnorm,atempo=1.25[voice];'  # Нормализация + ускорение голоса 1.25x
-                f'[1]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'  # Подложка с громкостью и зацикливанием
-                f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'  # Даккинг
-                f'[voice][ducked]amix=inputs=2:dropout_transition=0[out]',  # Микширование без ограничения длительности
-                '-map', '[out]',
-                '-t', str(total_duration),  # Ограничиваем длительность на уровне ffmpeg
-                '-c:a', 'libopus',  # Кодек Opus для Telegram
-                '-b:a', '64k',  # Битрейт
-                '-ar', '48000',  # Частота дискретизации
-                '-ac', '1',  # Моно
-                str(output_file)
-            ]
+            if voice2_file:
+                cmd = [
+                    'ffmpeg', '-y',
+                    '-i', voice_file,           # 0: первая часть голоса (строки 1-2)
+                    '-i', voice2_file,          # 1: вторая часть голоса (строки 3-4)
+                    '-i', backing_file,         # 2: подложка
+                    '-filter_complex',
+                    # Первая часть: задержка 7с, нормализация, ускорение 1.25
+                    f'[0]adelay=7000|7000,loudnorm,atempo=1.25[v1];'
+                    # Вторая часть: задержка до 14с (14 000 мс), нормализация, ускорение 1.25
+                    f'[1]adelay=14000|14000,loudnorm,atempo=1.25[v2];'
+                    # Музыка: громкость, зацикливание, затем компрессор (дакинг будет на суммарный голос)
+                    f'[2]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'
+                    # Суммируем два голоса
+                    f'[v1][v2]amix=inputs=2:dropout_transition=0[voice_all];'
+                    # Даккинг: компрессор на подложке уже применен, теперь миксуем голос с подложкой
+                    f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'
+                    f'[voice_all][ducked]amix=inputs=2:dropout_transition=0[out]',
+                    '-map', '[out]',
+                    '-t', str(total_duration),
+                    '-c:a', 'libopus',
+                    '-b:a', '64k',
+                    '-ar', '48000',
+                    '-ac', '1',
+                    str(output_file)
+                ]
+            else:
+                cmd = [
+                    'ffmpeg', '-y',
+                    '-i', voice_file,
+                    '-i', backing_file,
+                    '-filter_complex',
+                    f'[0]adelay=7000|7000,loudnorm,atempo=1.25[voice];'
+                    f'[1]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'
+                    f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'
+                    f'[voice][ducked]amix=inputs=2:dropout_transition=0[out]',
+                    '-map', '[out]',
+                    '-t', str(total_duration),
+                    '-c:a', 'libopus',
+                    '-b:a', '64k',
+                    '-ar', '48000',
+                    '-ac', '1',
+                    str(output_file)
+                ]
             
             logger.info(f"Выполняем ffmpeg команду с задержкой голоса на 7 секунд: {' '.join(cmd)}")
             
