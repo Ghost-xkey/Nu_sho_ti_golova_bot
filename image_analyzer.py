@@ -190,7 +190,7 @@ class GrishaPhotoCommenter:
             ]
         }
     
-    def generate_comment(self, analysis: Dict[str, Any]) -> str:
+    async def generate_comment(self, analysis: Dict[str, Any]) -> str:
         """Генерирует токсичный комментарий на основе анализа"""
         
         if not analysis:
