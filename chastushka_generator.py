@@ -214,6 +214,44 @@ class ChastushkaGenerator:
         topic = random.choice(topics)
         toxicity = random.randint(0, 2)
         return self.generate_chastushka(topic, toxicity, use_profanity=False)
+    
+    def create_chastushka_from_text(self, user_text: str, toxicity_level: int = 1) -> str:
+        """Создает частушку на основе пользовательского текста."""
+        # Анализируем текст пользователя и выбираем подходящую тему
+        text_lower = user_text.lower()
+        
+        # Определяем тему по ключевым словам
+        if any(word in text_lower for word in ['работа', 'офис', 'начальник', 'зарплата', 'коллега', 'труд', 'служба']):
+            topic = "работа"
+        elif any(word in text_lower for word in ['любовь', 'девушка', 'парень', 'отношения', 'сердце', 'чувства', 'романтика']):
+            topic = "любовь"
+        elif any(word in text_lower for word in ['деньги', 'долг', 'покупка', 'трата', 'богатство', 'финансы', 'бюджет']):
+            topic = "деньги"
+        elif any(word in text_lower for word in ['здоровье', 'болезнь', 'врач', 'таблетка', 'боль', 'лечение', 'медицина']):
+            topic = "здоровье"
+        elif any(word in text_lower for word in ['компьютер', 'интернет', 'телефон', 'техника', 'гаджет', 'программа', 'софт']):
+            topic = "технологии"
+        elif any(word in text_lower for word in ['погода', 'дождь', 'солнце', 'снег', 'ветер', 'климат', 'природа']):
+            topic = "погода"
+        else:
+            topic = "работа"  # По умолчанию
+        
+        # Генерируем частушку на выбранную тему
+        chastushka = self.generate_chastushka(topic=topic, toxicity=toxicity_level, use_profanity=False)
+        
+        # Добавляем отсылку к пользовательскому тексту
+        if random.random() < 0.4:  # 40% шанс добавить отсылку
+            intro_options = [
+                f"Ты говоришь: '{user_text[:30]}{'...' if len(user_text) > 30 else ''}', а я скажу:",
+                f"По поводу твоего '{user_text[:20]}{'...' if len(user_text) > 20 else ''}':",
+                f"Слушаю твои слова и думаю:",
+                f"Ты сказал, а я отвечу:",
+                f"Насчет '{user_text[:25]}{'...' if len(user_text) > 25 else ''}':"
+            ]
+            intro = random.choice(intro_options)
+            chastushka = f"{intro}\n{chastushka}"
+        
+        return chastushka
 
 
 # Пример использования
