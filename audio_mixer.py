@@ -120,7 +120,13 @@ class AudioMixer:
 
     def _get_backing_track(self, backing_type: str) -> Optional[str]:
         """Получает файл подложки"""
-        # Ищем файлы подложки
+        # Приоритетно ищем пользовательский файл Sample [music].mp3
+        sample_file = self.backing_dir / "Sample [music].mp3"
+        if sample_file.exists():
+            logger.info(f"Используем пользовательский файл: {sample_file}")
+            return str(sample_file)
+        
+        # Если нет пользовательского файла, ищем по типу
         backing_files = list(self.backing_dir.glob(f"{backing_type}*.mp3"))
         backing_files.extend(list(self.backing_dir.glob(f"{backing_type}*.wav")))
         backing_files.extend(list(self.backing_dir.glob(f"{backing_type}*.ogg")))
@@ -303,7 +309,9 @@ class AudioMixer:
             if file_path.is_file():
                 # Определяем тип по имени файла
                 name = file_path.stem.lower()
-                if "garmon" in name or "гармон" in name:
+                if "sample" in name and "music" in name:
+                    track_type = "user_music"  # Пользовательская музыка
+                elif "garmon" in name or "гармон" in name:
                     track_type = "garmon"
                 elif "balalaika" in name or "балалайк" in name:
                     track_type = "balalaika"
