@@ -1424,12 +1424,38 @@ async def handle_voice_message(message: types.Message):
     except Exception as e:
         logging.error(f"Error processing voice message: {e}")
 
-# ТЕСТОВЫЙ обработчик фотографий (в самом начале)
+# Обработчик фотографий с анализом через Google Vision API
 @router.message(F.photo)
-async def test_photo_handler(message: types.Message):
-    """ТЕСТОВЫЙ обработчик для диагностики"""
-    logging.error(f"🚨 ТЕСТОВЫЙ ОБРАБОТЧИК ФОТОГРАФИЙ СРАБОТАЛ! Chat: {message.chat.id}, User: {message.from_user.id}")
-    await message.reply("✅ ТЕСТОВЫЙ ОБРАБОТЧИК СРАБОТАЛ! Фото получено!")
+async def handle_photo(message: types.Message):
+    """Обработка фотографий с анализом через Google Vision API"""
+    try:
+        logging.info(f"Photo handler triggered: chat={message.chat.id}, user={message.from_user.id}")
+        # Показываем, что анализируем
+        await message.reply("🔍 Анализирую фото...")
+        
+        # Получаем файл
+        file_id = message.photo[-1].file_id
+        file = await message.bot.get_file(file_id)
+        
+        # Скачиваем изображение
+        image_data_buffer = io.BytesIO()
+        await message.bot.download_file(file.file_path, destination=image_data_buffer)
+        image_data_buffer.seek(0)
+        
+        # Анализируем через Google Vision API
+        analyzer = GoogleVisionAnalyzer()
+        analysis = await analyzer.analyze_image(image_data_buffer.read())
+        
+        # Генерируем комментарий Гриши
+        commenter = GrishaPhotoCommenter()
+        comment = await commenter.generate_comment(analysis)
+        
+        await message.reply(f"📸 {comment}")
+        logging.info(f"Photo analysis response sent for file_id: {file_id}")
+        
+    except Exception as e:
+        logging.error(f"Error analyzing photo: {e}", exc_info=True)
+        await message.reply("Не могу проанализировать это фото. Возможно, оно слишком ужасное даже для меня.")
 
 # AI-чат обработчик текстовых сообщений
 @router.message(lambda message: message.text is not None and message.photo is None and message.document is None and message.video is None and message.voice is None and message.video_note is None)
@@ -1759,12 +1785,16 @@ async def handle_image_document(message: types.Message):
         
         document = message.document
         file = await message.bot.get_file(document.file_id)
-        image_data = await message.bot.download_file(file.file_path)
+        
+        # Скачиваем изображение в буфер
+        image_data_buffer = io.BytesIO()
+        await message.bot.download_file(file.file_path, destination=image_data_buffer)
+        image_data_buffer.seek(0)
         
         logging.info(f"Image document received: chat={message.chat.id}, user={message.from_user.id}, name={document.file_name}, mime={document.mime_type}")
         
         analyzer = GoogleVisionAnalyzer()
-        analysis = await analyzer.analyze_image(image_data.read())
+        analysis = await analyzer.analyze_image(image_data_buffer.read())
         
         commenter = GrishaPhotoCommenter()
         comment = await commenter.generate_comment(analysis)
