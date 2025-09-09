@@ -1716,6 +1716,7 @@ async def cmd_ai_status(message: types.Message):
 async def handle_photo(message: types.Message):
     """Обработка фотографий с анализом через Google Vision API"""
     try:
+        logging.info(f"Photo handler triggered: chat={message.chat.id}, user={message.from_user.id}")
         # Показываем, что анализируем
         await message.reply("🔍 Анализирую фото...")
         
@@ -1746,6 +1747,7 @@ async def handle_photo(message: types.Message):
 async def handle_image_document(message: types.Message):
     """Обработка изображений, отправленных как документ (без сжатия)"""
     try:
+        logging.info(f"Image document handler triggered: chat={message.chat.id}, user={message.from_user.id}")
         await message.reply("🔍 Анализирую изображение (документ)...")
         
         document = message.document
