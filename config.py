@@ -41,6 +41,9 @@ YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID", "b1gr16qlpg0u8bo2h5eg")  # Fold
 # Настройки Кинопоиска
 KINOPOISK_API_TOKEN = os.getenv("KINOPOISK_API_TOKEN", "PVB3DPY-4E7MSX5-Q1SEQPV-J5KXG8T")
 
+# Настройки Google Vision API
+GOOGLE_VISION_API_KEY = os.getenv("GOOGLE_VISION_API_KEY", "AIzaSyDqc4ooQl57zX17RrpPL21q75jsEv6rqic")
+
 # Настройки AI поведения
 AI_ENABLED = True  # Включен ли AI-чат
 AI_RESPONSE_CHANCE = 0.1  # Вероятность случайного ответа (10%)

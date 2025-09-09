@@ -6,6 +6,7 @@ from kb import main_keyboard
 from db import save_video_message, get_video_count, get_user_stats, get_total_users
 from ai_chat import yandex_ai
 from config import AI_ENABLED, VOICE_ENABLED, ALLOW_PROFANITY, PROFANITY_LEVEL
+from image_analyzer import GoogleVisionAnalyzer, GrishaPhotoCommenter
 import logging
 import speech_kit
 
@@ -1710,3 +1711,31 @@ async def cmd_ai_status(message: types.Message):
     except Exception as e:
         logging.error(f"Error in ai_status command: {e}")
         await message.answer("❌ Ошибка при получении статуса AI")
+
+@router.message(lambda message: message.photo is not None)
+async def handle_photo(message: types.Message):
+    """Обработка фотографий с анализом через Google Vision API"""
+    try:
+        # Показываем, что анализируем
+        await message.reply("🔍 Анализирую фото...")
+        
+        # Получаем файл от Telegram
+        file = await message.bot.get_file(message.photo[-1].file_id)
+        
+        # Скачиваем изображение
+        image_data = await message.bot.download_file(file.file_path)
+        
+        # Анализируем изображение
+        analyzer = GoogleVisionAnalyzer()
+        analysis = await analyzer.analyze_image(image_data.read())
+        
+        # Генерируем комментарий Гриши
+        commenter = GrishaPhotoCommenter()
+        comment = commenter.generate_comment(analysis)
+        
+        # Отправляем результат
+        await message.reply(f"📸 {comment}")
+        
+    except Exception as e:
+        logging.error(f"Error analyzing photo: {e}")
+        await message.reply("Не могу проанализировать это фото. Возможно, оно слишком ужасное даже для меня.")
