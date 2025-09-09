@@ -10,6 +10,10 @@ from image_analyzer import GoogleVisionAnalyzer, GrishaPhotoCommenter
 import logging
 import speech_kit
 import io
+import os
+
+# ==================== COMPARE FLOW STATE ====================
+_compare_state = {}
 
 class TextEqualsFilter(BaseFilter):
     def __init__(self, text: str, ignore_case: bool = True):
@@ -71,6 +75,71 @@ async def cmd_help(message: types.Message):
         await message.answer(HELP_MESSAGE)
     except Exception as e:
         print(f"Error in help command: {e}")
+@router.message(Command(commands=["compare"]))
+async def cmd_compare(message: types.Message):
+    """Запускает режим сравнения двух фото: отправь два изображения подряд."""
+    try:
+        _compare_state[message.from_user.id] = {
+            'chat_id': message.chat.id,
+            'first': None
+        }
+        await message.answer("Отправь первое фото для сравнения, затем второе. Я скажу, что изменилось.")
+    except Exception as e:
+        logging.error(f"Error in compare command: {e}")
+
+@router.message(Command(commands=["chastushka"]))
+async def cmd_chastushka(message: types.Message):
+    """Генерирует и отправляет саркастическую частушку с музыкальной подложкой"""
+    try:
+        from chastushka_generator import ChastushkaGenerator
+        from audio_mixer import AudioMixer
+        
+        # Отправляем сообщение о начале генерации
+        processing_msg = await message.answer("🎵 Генерирую частушку...")
+        
+        # Создаем генератор и миксер
+        generator = ChastushkaGenerator()
+        mixer = AudioMixer()
+        
+        # Генерируем частушку
+        chastushka_text = generator.get_random_chastushka()
+        
+        # Обновляем сообщение
+        await processing_msg.edit_text("🎤 Озвучиваю частушку...")
+        
+        # Создаем аудио
+        audio_file = mixer.create_chastushka_audio(
+            text=chastushka_text,
+            backing_type="garmon",  # гармошка по умолчанию
+            ducking="soft",  # мягкий даккинг
+            backing_volume=-10  # -10 dB
+        )
+        
+        # Если не удалось создать с подложкой, пробуем только голос
+        if not audio_file:
+            await processing_msg.edit_text("🎤 Создаю голосовую версию...")
+            audio_file = mixer.create_voice_only(chastushka_text)
+        
+        if audio_file and os.path.exists(audio_file):
+            # Отправляем аудио
+            with open(audio_file, 'rb') as audio_data:
+                audio_input = BufferedInputFile(audio_data.read(), filename="chastushka.ogg")
+                await message.answer_voice(
+                    voice=audio_input,
+                    caption=f"🎵 **Частушка от Гриши**\n\n{chastushka_text}"
+                )
+            
+            # Удаляем временный файл
+            os.remove(audio_file)
+            await processing_msg.delete()
+            
+        else:
+            await processing_msg.edit_text("❌ Не удалось создать аудио частушку. Попробуйте позже.")
+            
+    except Exception as e:
+        logging.error(f"Error in chastushka command: {e}")
+        await message.answer("❌ Ошибка при создании частушки")
+
 
 @router.message(Command(commands=["videos"]))
 async def cmd_videos(message: types.Message):
@@ -1444,11 +1513,25 @@ async def handle_photo(message: types.Message):
         # Анализируем через Google Vision API
         analyzer = GoogleVisionAnalyzer()
         analysis = await analyzer.analyze_image(image_data_buffer.read())
-        
-        # Генерируем комментарий Гриши
+
+        # Сценарий сравнения?
+        st = _compare_state.get(message.from_user.id)
+        if st and st.get('first') is None:
+            _compare_state[message.from_user.id]['first'] = analysis
+            await message.reply("Ок, первое фото есть. Пришли второе.")
+            return
+        elif st and st.get('first') is not None:
+            first = st['first']
+            commenter = GrishaPhotoCommenter()
+            comment = commenter.generate_comparison_comment(first, analysis)
+            await message.reply(comment)
+            _compare_state.pop(message.from_user.id, None)
+            return
+
+        # Обычный режим: генерируем комментарий Гриши
         commenter = GrishaPhotoCommenter()
         comment = await commenter.generate_comment(analysis)
-        
+
         # Отправляем только комментарий без технической информации
         await message.reply(comment)
         logging.info(f"Photo analysis response sent for file_id: {file_id}")
@@ -1763,10 +1846,24 @@ async def handle_image_document(message: types.Message):
         
         analyzer = GoogleVisionAnalyzer()
         analysis = await analyzer.analyze_image(image_data_buffer.read())
-        
+
+        # Сценарий сравнения?
+        st = _compare_state.get(message.from_user.id)
+        if st and st.get('first') is None:
+            _compare_state[message.from_user.id]['first'] = analysis
+            await message.reply("Ок, первое фото есть. Пришли второе.")
+            return
+        elif st and st.get('first') is not None:
+            first = st['first']
+            commenter = GrishaPhotoCommenter()
+            comment = commenter.generate_comparison_comment(first, analysis)
+            await message.reply(comment)
+            _compare_state.pop(message.from_user.id, None)
+            return
+
         commenter = GrishaPhotoCommenter()
         comment = await commenter.generate_comment(analysis)
-        
+
         # Отправляем только комментарий без технической информации
         await message.reply(comment)
     except Exception as e:
