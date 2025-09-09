@@ -204,13 +204,8 @@ class GrishaPhotoCommenter:
         comments = self.comment_templates.get(photo_type, self.comment_templates['default'])
         base_comment = random.choice(comments)
         
-        # Добавляем детали анализа
-        details = self.get_analysis_details(analysis)
-        
-        if details:
-            return f"{base_comment}\n\n🔍 {details}"
-        else:
-            return base_comment
+        # Возвращаем только комментарий без технической информации
+        return base_comment
     
     def determine_photo_type(self, analysis: Dict[str, Any]) -> str:
         """Определяет тип фото на основе анализа"""

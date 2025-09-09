@@ -1431,8 +1431,6 @@ async def handle_photo(message: types.Message):
     """Обработка фотографий с анализом через Google Vision API"""
     try:
         logging.info(f"Photo handler triggered: chat={message.chat.id}, user={message.from_user.id}")
-        # Показываем, что анализируем
-        await message.reply("🔍 Анализирую фото...")
         
         # Получаем файл
         file_id = message.photo[-1].file_id
@@ -1451,7 +1449,8 @@ async def handle_photo(message: types.Message):
         commenter = GrishaPhotoCommenter()
         comment = await commenter.generate_comment(analysis)
         
-        await message.reply(f"📸 {comment}")
+        # Отправляем только комментарий без технической информации
+        await message.reply(comment)
         logging.info(f"Photo analysis response sent for file_id: {file_id}")
         
     except Exception as e:
@@ -1751,7 +1750,6 @@ async def handle_image_document(message: types.Message):
     """Обработка изображений, отправленных как документ (без сжатия)"""
     try:
         logging.info(f"Image document handler triggered: chat={message.chat.id}, user={message.from_user.id}")
-        await message.reply("🔍 Анализирую изображение (документ)...")
         
         document = message.document
         file = await message.bot.get_file(document.file_id)
@@ -1769,7 +1767,8 @@ async def handle_image_document(message: types.Message):
         commenter = GrishaPhotoCommenter()
         comment = await commenter.generate_comment(analysis)
         
-        await message.reply(f"📸 {comment}")
+        # Отправляем только комментарий без технической информации
+        await message.reply(comment)
     except Exception as e:
         logging.error(f"Error analyzing image document: {e}")
         await message.reply("Не могу проанализировать это изображение. Попробуй еще раз или пришли как фото.")
