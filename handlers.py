@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.types import BufferedInputFile
 from aiogram.filters import BaseFilter, CommandStart, Command
 from text import WELCOME_MESSAGE, HELP_MESSAGE
@@ -1712,7 +1712,7 @@ async def cmd_ai_status(message: types.Message):
         logging.error(f"Error in ai_status command: {e}")
         await message.answer("❌ Ошибка при получении статуса AI")
 
-@router.message(lambda message: message.photo is not None)
+@router.message(F.photo)
 async def handle_photo(message: types.Message):
     """Обработка фотографий с анализом через Google Vision API"""
     try:
@@ -1724,6 +1724,8 @@ async def handle_photo(message: types.Message):
         
         # Скачиваем изображение
         image_data = await message.bot.download_file(file.file_path)
+        
+        logging.info(f"Photo received: chat={message.chat.id}, user={message.from_user.id}, file_path={file.file_path}")
         
         # Анализируем изображение
         analyzer = GoogleVisionAnalyzer()
@@ -1739,3 +1741,26 @@ async def handle_photo(message: types.Message):
     except Exception as e:
         logging.error(f"Error analyzing photo: {e}")
         await message.reply("Не могу проанализировать это фото. Возможно, оно слишком ужасное даже для меня.")
+
+@router.message(F.document & (F.document.mime_type.startswith("image/")))
+async def handle_image_document(message: types.Message):
+    """Обработка изображений, отправленных как документ (без сжатия)"""
+    try:
+        await message.reply("🔍 Анализирую изображение (документ)...")
+        
+        document = message.document
+        file = await message.bot.get_file(document.file_id)
+        image_data = await message.bot.download_file(file.file_path)
+        
+        logging.info(f"Image document received: chat={message.chat.id}, user={message.from_user.id}, name={document.file_name}, mime={document.mime_type}")
+        
+        analyzer = GoogleVisionAnalyzer()
+        analysis = await analyzer.analyze_image(image_data.read())
+        
+        commenter = GrishaPhotoCommenter()
+        comment = commenter.generate_comment(analysis)
+        
+        await message.reply(f"📸 {comment}")
+    except Exception as e:
+        logging.error(f"Error analyzing image document: {e}")
+        await message.reply("Не могу проанализировать это изображение. Попробуй еще раз или пришли как фото.")
