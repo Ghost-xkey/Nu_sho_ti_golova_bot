@@ -32,6 +32,15 @@ class TextEqualsFilter(BaseFilter):
 
 router = Router()
 
+class WaitingForCustomChastushkaFilter(BaseFilter):
+    """Активируется только когда пользователь в режиме ожидания текста для частушки"""
+    async def __call__(self, message: types.Message) -> bool:
+        try:
+            user_id = message.from_user.id
+            return _custom_chastushka_state.get(user_id, {}).get("waiting_for_text", False)
+        except Exception:
+            return False
+
 @router.message(CommandStart())
 async def cmd_start(message: types.Message):
     try:
@@ -161,64 +170,64 @@ async def cmd_chastushka_custom(message: types.Message):
         logging.error(f"Error in chastushka_custom command: {e}")
         await message.answer("❌ Ошибка при запуске создания частушки")
 
-@router.message(F.text)
+@router.message(F.text, WaitingForCustomChastushkaFilter())
 async def handle_text_for_chastushka(message: types.Message):
     """Обрабатывает текстовые сообщения для создания частушки"""
     try:
         user_id = message.from_user.id
         
-        # Проверяем, ждет ли пользователь создания частушки
-        if user_id in _custom_chastushka_state and _custom_chastushka_state[user_id].get("waiting_for_text"):
-            user_text = message.text.strip()
-            
-            if len(user_text) < 3:
-                await message.answer("❌ Слишком короткий текст. Напиши что-то более содержательное!")
-                return
-            
-            # Убираем состояние ожидания
+        # Пользовательский текст для частушки (режим ожидания гарантирован фильтром)
+        user_text = message.text.strip()
+        
+        if len(user_text) < 3:
+            await message.answer("❌ Слишком короткий текст. Напиши что-то более содержательное!")
+            return
+        
+        # Убираем состояние ожидания
+        if user_id in _custom_chastushka_state:
             del _custom_chastushka_state[user_id]
+        
+        # Отправляем сообщение о начале генерации
+        processing_msg = await message.answer("🎵 Генерирую частушку из твоего текста...")
+        
+        # Создаем миксер (без генерации текста)
+        from audio_mixer import AudioMixer
+        mixer = AudioMixer()
+        
+        # Используем текст пользователя без изменений
+        chastushka_text = user_text
+        
+        # Обновляем сообщение
+        await processing_msg.edit_text("🎤 Озвучиваю частушку...")
+        
+        # Создаем аудио
+        audio_file = mixer.create_chastushka_audio(
+            text=chastushka_text,
+            backing_type="garmon",  # гармошка по умолчанию
+            ducking="soft",  # мягкий даккинг
+            backing_volume=-10  # -10 dB
+        )
+        
+        # Если не удалось создать с подложкой, пробуем только голос
+        if not audio_file:
+            await processing_msg.edit_text("🎤 Создаю голосовую версию...")
+            audio_file = mixer.create_voice_only(chastushka_text)
+        
+        if audio_file and os.path.exists(audio_file):
+            # Отправляем аудио
+            with open(audio_file, 'rb') as audio_data:
+                audio_input = BufferedInputFile(audio_data.read(), filename="custom_chastushka.ogg")
+                await message.answer_voice(
+                    voice=audio_input,
+                    caption=f"🎵 **Частушка по твоему тексту**\n\n{chastushka_text}"
+                )
             
-            # Отправляем сообщение о начале генерации
-            processing_msg = await message.answer("🎵 Генерирую частушку из твоего текста...")
+            # Удаляем временный файл
+            os.remove(audio_file)
+            await processing_msg.delete()
             
-            # Создаем миксер (без генерации текста)
-            from audio_mixer import AudioMixer
-            mixer = AudioMixer()
-            
-            # Используем текст пользователя без изменений
-            chastushka_text = user_text
-            
-            # Обновляем сообщение
-            await processing_msg.edit_text("🎤 Озвучиваю частушку...")
-            
-            # Создаем аудио
-            audio_file = mixer.create_chastushka_audio(
-                text=chastushka_text,
-                backing_type="garmon",  # гармошка по умолчанию
-                ducking="soft",  # мягкий даккинг
-                backing_volume=-10  # -10 dB
-            )
-            
-            # Если не удалось создать с подложкой, пробуем только голос
-            if not audio_file:
-                await processing_msg.edit_text("🎤 Создаю голосовую версию...")
-                audio_file = mixer.create_voice_only(chastushka_text)
-            
-            if audio_file and os.path.exists(audio_file):
-                # Отправляем аудио
-                with open(audio_file, 'rb') as audio_data:
-                    audio_input = BufferedInputFile(audio_data.read(), filename="custom_chastushka.ogg")
-                    await message.answer_voice(
-                        voice=audio_input,
-                        caption=f"🎵 **Частушка по твоему тексту**\n\n{chastushka_text}"
-                    )
-                
-                # Удаляем временный файл
-                os.remove(audio_file)
-                await processing_msg.delete()
-                
-            else:
-                await processing_msg.edit_text("❌ Не удалось создать аудио частушку. Попробуйте позже.")
+        else:
+            await processing_msg.edit_text("❌ Не удалось создать аудио частушку. Попробуйте позже.")
                 
     except Exception as e:
         logging.error(f"Error in handle_text_for_chastushka: {e}")
