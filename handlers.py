@@ -1425,7 +1425,7 @@ async def handle_voice_message(message: types.Message):
         logging.error(f"Error processing voice message: {e}")
 
 # AI-чат обработчик текстовых сообщений
-@router.message(lambda message: message.text is not None)
+@router.message(lambda message: message.text is not None and message.photo is None and message.document is None and message.video is None and message.voice is None and message.video_note is None)
 async def handle_ai_message(message: types.Message):
     """
     Обработчик для AI-чата - отвечает на текстовые сообщения
