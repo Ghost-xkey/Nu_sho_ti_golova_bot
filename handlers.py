@@ -9,6 +9,7 @@ from config import AI_ENABLED, VOICE_ENABLED, ALLOW_PROFANITY, PROFANITY_LEVEL
 from image_analyzer import GoogleVisionAnalyzer, GrishaPhotoCommenter
 import logging
 import speech_kit
+import io
 
 class TextEqualsFilter(BaseFilter):
     def __init__(self, text: str, ignore_case: bool = True):
