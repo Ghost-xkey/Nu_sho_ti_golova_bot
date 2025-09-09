@@ -175,8 +175,9 @@ class AudioMixer:
                 f'[voice_delayed]loudnorm[voice];'  # Нормализация голоса
                 f'[1]volume={backing_volume}dB,aloop=loop=-1:size=2e+09[backing];'  # Подложка с громкостью и зацикливанием
                 f'[backing]acompressor=threshold={duck_settings["threshold"]}dB:ratio={duck_settings["ratio"]}:attack={duck_settings["attack"]}:release={duck_settings["release"]}[ducked];'  # Даккинг
-                f'[voice][ducked]amix=inputs=2:duration={total_duration}:dropout_transition=0[out]',  # Микширование с общей длительностью
+                f'[voice][ducked]amix=inputs=2:dropout_transition=0[out]',  # Микширование без ограничения длительности
                 '-map', '[out]',
+                '-t', str(total_duration),  # Ограничиваем длительность на уровне ffmpeg
                 '-c:a', 'libopus',  # Кодек Opus для Telegram
                 '-b:a', '64k',  # Битрейт
                 '-ar', '48000',  # Частота дискретизации
