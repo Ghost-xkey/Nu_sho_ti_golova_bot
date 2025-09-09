@@ -1745,37 +1745,6 @@ async def cmd_ai_status(message: types.Message):
         logging.error(f"Error in ai_status command: {e}")
         await message.answer("❌ Ошибка при получении статуса AI")
 
-@router.message(F.photo)
-async def handle_photo(message: types.Message):
-    """Обработка фотографий с анализом через Google Vision API"""
-    try:
-        logging.info(f"Photo handler triggered: chat={message.chat.id}, user={message.from_user.id}")
-        # Показываем, что анализируем
-        await message.reply("🔍 Анализирую фото...")
-        
-        # Получаем файл от Telegram
-        file = await message.bot.get_file(message.photo[-1].file_id)
-        
-        # Скачиваем изображение
-        image_data = await message.bot.download_file(file.file_path)
-        
-        logging.info(f"Photo received: chat={message.chat.id}, user={message.from_user.id}, file_path={file.file_path}")
-        
-        # Анализируем изображение
-        analyzer = GoogleVisionAnalyzer()
-        analysis = await analyzer.analyze_image(image_data.read())
-        
-        # Генерируем комментарий Гриши
-        commenter = GrishaPhotoCommenter()
-        comment = await commenter.generate_comment(analysis)
-        
-        # Отправляем результат
-        await message.reply(f"📸 {comment}")
-        
-    except Exception as e:
-        logging.error(f"Error analyzing photo: {e}")
-        await message.reply("Не могу проанализировать это фото. Возможно, оно слишком ужасное даже для меня.")
-
 @router.message(F.document & (F.document.mime_type.startswith("image/")))
 async def handle_image_document(message: types.Message):
     """Обработка изображений, отправленных как документ (без сжатия)"""
