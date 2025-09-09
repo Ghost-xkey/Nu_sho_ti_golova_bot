@@ -100,23 +100,55 @@ class AudioMixer:
             return None
 
     def _generate_tts(self, text: str) -> Optional[str]:
-        """Генерирует TTS из текста"""
+        """Генерирует TTS из текста с поддержкой специальных обозначений"""
         try:
             from gtts import gTTS
             
             # Создаем временный файл
             temp_file = self.temp_dir / f"voice_{random.randint(1000, 9999)}.mp3"
             
+            # Обрабатываем специальные обозначения
+            processed_text = self._process_speech_marks(text)
+            
             # Генерируем TTS
-            tts = gTTS(text=text, lang='ru', slow=False)
+            tts = gTTS(text=processed_text, lang='ru', slow=False)
             tts.save(str(temp_file))
             
-            logger.info(f"TTS сохранен в {temp_file}")
+            logger.info(f"TTS сохранен в {temp_file} (обработанный текст: {processed_text[:50]}...)")
             return str(temp_file)
             
         except Exception as e:
             logger.error(f"Ошибка генерации TTS: {e}")
             return None
+
+    def _process_speech_marks(self, text: str) -> str:
+        """Обрабатывает специальные обозначения для управления речью"""
+        import re
+        
+        # Убираем специальные символы для TTS, но сохраняем их эффект
+        processed = text
+        
+        # Обрабатываем ударения (+Ехал -> Ехал с ударением)
+        # gTTS не поддерживает SSML, поэтому просто убираем +
+        processed = re.sub(r'\+([аеёиоуыэюя])', r'\1', processed, flags=re.IGNORECASE)
+        
+        # Обрабатываем тайминг начала (- и --)
+        # Убираем дефисы в начале
+        processed = re.sub(r'^-+', '', processed)
+        
+        # Обрабатываем ускорение (!)
+        # Убираем восклицательные знаки в начале
+        processed = re.sub(r'^!+', '', processed)
+        
+        # Обрабатываем паузы - заменяем на более длинные паузы
+        # Точка = короткая пауза, запятая = очень короткая пауза
+        processed = processed.replace('.', '...')  # Увеличиваем паузы после точек
+        processed = processed.replace(',', '..')   # Увеличиваем паузы после запятых
+        
+        # Убираем лишние пробелы
+        processed = re.sub(r'\s+', ' ', processed).strip()
+        
+        return processed
 
     def _get_backing_track(self, backing_type: str) -> Optional[str]:
         """Получает файл подложки"""

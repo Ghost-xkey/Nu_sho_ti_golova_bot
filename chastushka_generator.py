@@ -124,7 +124,7 @@ class ChastushkaGenerator:
 
     def generate_chastushka(self, topic: str, toxicity: int = 1, use_profanity: bool = False) -> str:
         """
-        Генерирует частушку на заданную тему
+        Генерирует частушку на заданную тему с правильной структурой
         
         Args:
             topic: Тема для частушки
@@ -132,7 +132,7 @@ class ChastushkaGenerator:
             use_profanity: Использовать ли мат
             
         Returns:
-            Сгенерированная частушка
+            Сгенерированная частушка с специальными обозначениями
         """
         # Выбираем случайный шаблон
         template = random.choice(self.chastushka_templates)
@@ -145,7 +145,10 @@ class ChastushkaGenerator:
             toxic_phrase = random.choice(self.toxic_phrases[toxicity])
             chastushka += f"\n{toxic_phrase}"
         
-        return chastushka
+        # Обрабатываем текст для правильной озвучки
+        processed_chastushka = self._add_speech_marks(chastushka, toxicity)
+        
+        return processed_chastushka
 
     def _fill_template(self, template: str, topic: str, toxicity: int, use_profanity: bool) -> str:
         """Заполняет шаблон частушки"""
@@ -252,6 +255,69 @@ class ChastushkaGenerator:
             chastushka = f"{intro}\n{chastushka}"
         
         return chastushka
+
+
+    def _add_speech_marks(self, text: str, toxicity: int) -> str:
+        """Добавляет специальные обозначения для управления речью"""
+        lines = text.split('\n')
+        processed_lines = []
+        
+        for i, line in enumerate(lines):
+            if not line.strip():
+                continue
+                
+            # Добавляем тайминг начала (раньше для более токсичных)
+            if toxicity >= 2 and i == 0:
+                line = f"--{line}"  # Очень ранний старт для ядовитых
+            elif toxicity >= 1 and i == 0:
+                line = f"-{line}"   # Ранний старт для острых
+            
+            # Добавляем ускорение для токсичных
+            if toxicity >= 2 and i == 0:
+                line = f"!{line}"   # Ускорение для ядовитых
+            
+            # Добавляем ударения на ключевые слова
+            line = self._add_stress_marks(line, toxicity)
+            
+            # Добавляем паузы в конце строк
+            if i < len(lines) - 1:  # Не последняя строка
+                line += ","
+            else:  # Последняя строка
+                line += "."
+            
+            processed_lines.append(line)
+        
+        return '\n'.join(processed_lines)
+    
+    def _add_stress_marks(self, line: str, toxicity: int) -> str:
+        """Добавляет ударения на ключевые слова"""
+        # Слова для ударения (зависит от токсичности)
+        stress_words = {
+            0: ["хорошо", "отлично", "замечательно"],
+            1: ["проблема", "вопрос", "дело"],
+            2: ["беда", "кошмар", "ада", "тупик"],
+            3: ["пиздец", "хуйня", "говно", "дерьмо"]
+        }
+        
+        words_to_stress = stress_words.get(toxicity, stress_words[1])
+        
+        for word in words_to_stress:
+            if word in line.lower():
+                # Находим первое вхождение слова и добавляем ударение
+                pattern = re.compile(re.escape(word), re.IGNORECASE)
+                match = pattern.search(line)
+                if match:
+                    start = match.start()
+                    end = match.end()
+                    # Добавляем + перед первой гласной
+                    word_part = line[start:end]
+                    for j, char in enumerate(word_part):
+                        if char.lower() in 'аеёиоуыэюя':
+                            stressed_word = word_part[:j] + '+' + word_part[j:]
+                            line = line[:start] + stressed_word + line[end:]
+                            break
+        
+        return line
 
 
 # Пример использования
