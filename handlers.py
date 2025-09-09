@@ -137,8 +137,7 @@ async def cmd_chastushka(message: types.Message):
             with open(audio_file, 'rb') as audio_data:
                 audio_input = BufferedInputFile(audio_data.read(), filename="chastushka.ogg")
                 await message.answer_voice(
-                    voice=audio_input,
-                    caption=f"🎵 **Частушка от Гриши**\n\n{chastushka_text}"
+                    voice=audio_input
                 )
             
             # Удаляем временный файл
@@ -218,8 +217,7 @@ async def handle_text_for_chastushka(message: types.Message):
             with open(audio_file, 'rb') as audio_data:
                 audio_input = BufferedInputFile(audio_data.read(), filename="custom_chastushka.ogg")
                 await message.answer_voice(
-                    voice=audio_input,
-                    caption=f"🎵 **Частушка по твоему тексту**\n\n{chastushka_text}"
+                    voice=audio_input
                 )
             
             # Удаляем временный файл
