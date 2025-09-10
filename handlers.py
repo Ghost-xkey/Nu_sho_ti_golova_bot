@@ -7,6 +7,7 @@ from db import save_video_message, get_video_count, get_user_stats, get_total_us
 from ai_chat import yandex_ai
 from config import AI_ENABLED, VOICE_ENABLED, ALLOW_PROFANITY, PROFANITY_LEVEL
 from image_analyzer import GoogleVisionAnalyzer, GrishaPhotoCommenter
+from facts_generator import FactsGenerator
 import logging
 import speech_kit
 import io
@@ -1963,3 +1964,113 @@ async def handle_image_document(message: types.Message):
     except Exception as e:
         logging.error(f"Error analyzing image document: {e}")
         await message.reply("Не могу проанализировать это изображение. Попробуй еще раз или пришли как фото.")
+
+# ==================== FACTS COMMANDS ====================
+
+@router.message(Command("fact"))
+async def cmd_fact(message: types.Message):
+    """Отправляет случайный факт с подколом"""
+    try:
+        facts_gen = FactsGenerator()
+        user_id = message.from_user.id
+        
+        fact_data = facts_gen.get_random_fact(user_id)
+        if fact_data:
+            text = f"🧠 **Интересный факт**\n\n{fact_data['fact']}\n\n{fact_data['roast']}"
+            
+            # Отмечаем факт как отправленный
+            facts_gen.mark_fact_as_sent(user_id, fact_data, "manual")
+            
+            await message.answer(text)
+        else:
+            await message.answer("😴 Все факты на сегодня показаны! Заходи завтра за новыми!")
+            
+    except Exception as e:
+        logging.error(f"Error in fact command: {e}")
+        await message.answer("❌ Ошибка при получении факта")
+
+@router.message(Command("fact_animal"))
+async def cmd_fact_animal(message: types.Message):
+    """Отправляет факт про животных"""
+    try:
+        facts_gen = FactsGenerator()
+        user_id = message.from_user.id
+        
+        fact_data = facts_gen.get_random_fact(user_id, "animals")
+        if fact_data:
+            text = f"🐾 **Факт про животных**\n\n{fact_data['fact']}\n\n{fact_data['roast']}"
+            
+            facts_gen.mark_fact_as_sent(user_id, fact_data, "manual_animal")
+            
+            await message.answer(text)
+        else:
+            await message.answer("😴 Все факты про животных на сегодня показаны!")
+            
+    except Exception as e:
+        logging.error(f"Error in fact_animal command: {e}")
+        await message.answer("❌ Ошибка при получении факта")
+
+@router.message(Command("fact_science"))
+async def cmd_fact_science(message: types.Message):
+    """Отправляет научный факт"""
+    try:
+        facts_gen = FactsGenerator()
+        user_id = message.from_user.id
+        
+        fact_data = facts_gen.get_random_fact(user_id, "science")
+        if fact_data:
+            text = f"🔬 **Научный факт**\n\n{fact_data['fact']}\n\n{fact_data['roast']}"
+            
+            facts_gen.mark_fact_as_sent(user_id, fact_data, "manual_science")
+            
+            await message.answer(text)
+        else:
+            await message.answer("😴 Все научные факты на сегодня показаны!")
+            
+    except Exception as e:
+        logging.error(f"Error in fact_science command: {e}")
+        await message.answer("❌ Ошибка при получении факта")
+
+@router.message(Command("fact_history"))
+async def cmd_fact_history(message: types.Message):
+    """Отправляет исторический факт"""
+    try:
+        facts_gen = FactsGenerator()
+        user_id = message.from_user.id
+        
+        fact_data = facts_gen.get_random_fact(user_id, "history")
+        if fact_data:
+            text = f"🏛️ **Исторический факт**\n\n{fact_data['fact']}\n\n{fact_data['roast']}"
+            
+            facts_gen.mark_fact_as_sent(user_id, fact_data, "manual_history")
+            
+            await message.answer(text)
+        else:
+            await message.answer("😴 Все исторические факты на сегодня показаны!")
+            
+    except Exception as e:
+        logging.error(f"Error in fact_history command: {e}")
+        await message.answer("❌ Ошибка при получении факта")
+
+@router.message(Command("my_facts_stats"))
+async def cmd_my_facts_stats(message: types.Message):
+    """Показывает статистику фактов пользователя"""
+    try:
+        facts_gen = FactsGenerator()
+        user_id = message.from_user.id
+        
+        stats = facts_gen.get_user_facts_stats(user_id)
+        
+        text = f"""📊 **Твоя статистика фактов:**
+
+🤓 Фактов прочитано: {stats['total_read']}
+📅 Сегодня прочитано: {stats['today_read']}
+❤️ Любимая категория: {stats['favorite_category']}
+
+Ты настоящий знаток! (Или просто много времени проводишь в интернете) 😄"""
+        
+        await message.answer(text)
+        
+    except Exception as e:
+        logging.error(f"Error in my_facts_stats command: {e}")
+        await message.answer("❌ Ошибка при получении статистики")

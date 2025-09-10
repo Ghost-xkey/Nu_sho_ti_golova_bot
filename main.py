@@ -7,6 +7,7 @@ from handlers import router
 from utils import send_daily_message, send_yearly_message, check_and_send_yearly_events, check_and_send_yearly_events_sync, simple_test_function
 from db import create_tables
 from middlewares import ExampleMiddleware
+from facts_generator import FactsGenerator
 
 import logging
 import os
@@ -50,6 +51,68 @@ async def test_scheduler():
     logging.info("🧪 Test scheduler function called!")
 
 scheduler.add_job(test_scheduler, "interval", seconds=10)
+
+# ==================== FACTS SCHEDULER ====================
+
+async def send_daily_fact(send_time: str):
+    """Отправляет ежедневный факт всем активным пользователям"""
+    try:
+        logging.info(f"🧠 Sending daily fact at {send_time}")
+        
+        facts_gen = FactsGenerator()
+        active_users = facts_gen.get_all_active_users()
+        
+        if not active_users:
+            logging.info("No active users found for facts")
+            return
+        
+        global bot
+        if bot is None:
+            logging.error("Bot instance not available")
+            return
+        
+        sent_count = 0
+        for user_id in active_users:
+            try:
+                fact_data = facts_gen.get_random_fact(user_id)
+                if fact_data:
+                    text = f"🧠 **Факт дня** ({send_time})\n\n{fact_data['fact']}\n\n{fact_data['roast']}"
+                    
+                    await bot.send_message(user_id, text)
+                    facts_gen.mark_fact_as_sent(user_id, fact_data, send_time)
+                    sent_count += 1
+                    
+                    logging.info(f"Fact sent to user {user_id}")
+                else:
+                    logging.info(f"No available facts for user {user_id}")
+                    
+            except Exception as e:
+                logging.error(f"Error sending fact to user {user_id}: {e}")
+        
+        logging.info(f"Daily facts sent to {sent_count} users at {send_time}")
+        
+    except Exception as e:
+        logging.error(f"Error in send_daily_fact: {e}")
+
+# Добавляем задачи для отправки фактов в указанное время
+fact_times = [
+    ("10:00", 10, 0),
+    ("13:00", 13, 0), 
+    ("17:00", 17, 0),
+    ("21:00", 21, 0),
+    ("23:00", 23, 0)
+]
+
+for time_str, hour, minute in fact_times:
+    scheduler.add_job(
+        send_daily_fact,
+        "cron",
+        hour=hour,
+        minute=minute,
+        args=[time_str],
+        id=f"daily_fact_{time_str.replace(':', '')}"
+    )
+    logging.info(f"Added daily fact job: {time_str}")
 
 async def on_startup(dispatcher):
     logging.info("🚀 on_startup function called!")
